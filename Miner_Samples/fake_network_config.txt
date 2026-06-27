@@ -1,0 +1,2 @@
+stratum+tcp://abc.minepool.com:3333
+wallet=abc123xyz

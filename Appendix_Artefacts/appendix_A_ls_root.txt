@@ -1,0 +1,16 @@
+total 60
+drwxrwxr-x 13 dimple-s-lab dimple-s-lab 4096 Jan  5 13:15 .
+drwxr-x--- 20 dimple-s-lab dimple-s-lab 4096 Jan  5 02:26 ..
+-rw-rw-r--  1 dimple-s-lab dimple-s-lab  719 Nov 13 16:45 ...
+drwxrwxr-x  2 dimple-s-lab dimple-s-lab 4096 Jan  5 13:17 Appendix_Artefacts
+drwxrwxr-x  2 dimple-s-lab dimple-s-lab 4096 Jan  3 19:47 Dissertation_Figures
+drwxrwxr-x  3 dimple-s-lab dimple-s-lab 4096 Nov 18 00:00 HOME
+drwxrwxr-x  2 dimple-s-lab dimple-s-lab 4096 Nov 18 00:38 Logs
+drwxrwxr-x  2 dimple-s-lab dimple-s-lab 4096 Jan  3 20:32 MemoryDumps
+drwxrwxr-x  3 dimple-s-lab dimple-s-lab 4096 Dec  7 22:00 Miner_Samples
+drwxrwxr-x  4 dimple-s-lab dimple-s-lab 4096 Jan  3 19:59 Reports
+drwxrwxr-x  2 dimple-s-lab dimple-s-lab 4096 Dec  4 14:33 Scripts
+-rw-rw-r--  1 dimple-s-lab dimple-s-lab   21 Nov 18 00:36 test_sample.txt
+drwxrwxr-x  2 dimple-s-lab dimple-s-lab 4096 Dec 10 13:01 Tools
+drwxrwxr-x  5 dimple-s-lab dimple-s-lab 4096 Nov 13 16:20 venv
+drwxrwxr-x  2 dimple-s-lab dimple-s-lab 4096 Jan  3 19:54 YARA_Rules

@@ -1,0 +1,14 @@
+venv/
+forensic_venv/
+forensics_venv/
+__pycache__/
+*.pyc
+Reports/
+Logs/
+*.bin
+*.raw
+*.vmem
+*.vdi
+*.zip
+*.tar.gz
+*.DS_Store

@@ -1,0 +1,467 @@
+$sSL)
+tCPH
+tCPH
+XMRIG_VERSION
+XMRIG_KIND
+XMRIG_HOSTNAME
+XMRIG_EXE
+XMRIG_EXE_DIR
+XMRIG_CWD
+XMRIG_HOME_DIR
+XMRIG_TEMP_DIR
+XMRIG_DATA_DIR
+.xmrig.json
+.config/xmrig.json
+XMRig
+OpenSSL 1.1.1s  1 Nov 2022
+OpenSSL/%.*s 
+stratum+ssl://randomx.xmrig.com:443
+api-worker-id
+donate-level
+donate-over-proxy
+cpu-memory-pool
+XMRig 6.21.0
+OpenSSL/%.*s
+Usage: xmrig [OPTIONS]
+  -a, --algo=ALGO               mining algorithm https://xmrig.com/docs/algorithms
+      --coin=COIN               specify coin instead of algorithm
+  -k, --keepalive               send keepalived packet for prevent timeout (needs pool support)
+      --rig-id=ID               rig identifier for pool-side statistics (needs pool support)
+      --tls                     enable SSL/TLS support (needs pool support)
+      --tls-fingerprint=HEX     pool TLS certificate fingerprint for strict certificate pinning
+      --daemon                  use daemon RPC instead of pool for solo mining
+      --user-agent              set custom user-agent string for pool
+      --donate-level=N          donate level, default 1%% (1 minute in 100 minutes)
+      --donate-over-proxy=N     control donate over xmrig-proxy feature
+  -v, --av=N                    algorithm variation, 0 auto select
+      --cpu-memory-pool=N       number of 2 MB pages for persistent memory pool, -1 (auto), 0 (disable)
+      --api-worker-id=ID        custom worker-id for API
+XMRig 6.21.0
+[0;31munknown algorithm, make sure you set "algo" or "coin" option
+[0;31munsupported algorithm 
+[0;31mincompatible/disabled algorithm 
+pool_wallet
+pool-side hashes
+pool address
+[1;37mPOOL #%-7zu
+pools
+stratum+ssl://
+stratum+tcp://
+[%s] incompatible/disabled algorithm "%s" detected, reconnect
+[0m algo 
+[1;36mhttps://xmrig.com/benchmark/%s
+api.xmrig.com
+worker_id
+Invalid algorithm.
+hwloc auto configuration for algorithm "%s" failed.
+no valid configuration found, try https://xmrig.com/wizard
+donate_level
+[1;37mdev donate started
+[1;37mdev donate finished
+[0;31mno active pools, stop mining
+[0m algo 
+stratum+ssl://%s
+donate.ssl.xmrig.com
+donate.v2.xmrig.com
+DONATE
+[0m algo 
+xmrig
+SSL_CTX_set_cipher_list("%s") failed.
+SSL_CTX_set_ciphersuites("%s") failed.
+SSL_CTX_set_tmp_dh("%s") failed.
+SSL_CTX_use_certificate_chain_file("%s") failed.
+SSL_CTX_use_PrivateKey_file("%s") failed.
+Unable to create SSL context
+SSL alert number 
+SSL for verify callback
+ssl_client
+ssl_server
+OPENSSL_DIR_read(&ctx, '
+SSLv3
+ssl3-md5
+ssl3-sha1
+OpenSSL 1.1.1s  1 Nov 2022
+SERVERINFOV2 FORSSL SESSION PARAMETERS
+No ciphers enabled for max supported SSL/TLS version
+xSSL_SESSION_ASN1
+SSLv2
+no_ssl3
+ClientSignatureAlgorithms
+no shared signature algorithms
+no suitable signature algorithm
+old session compression algorithm not returned
+required compression algorithm missing
+ssl3 ext invalid max fragment length
+ssl3 ext invalid servername type
+sslv3 alert certificate expired
+sslv3 alert certificate revoked
+sslv3 alert certificate unknown
+sslv3 alert decompression failure
+sslv3 alert unexpected message
+sslv3 alert unsupported certificate
+ssl ctx has no default ssl version
+ssl session id callback failed
+ssl session id context too long
+unable to load ssl3 md5 routines
+unable to load ssl3 sha1 routines
+unsupported compression algorithm
+ossl_statem_client13_write_transition
+ossl_statem_client_post_process_message
+ossl_statem_client_process_message
+ossl_statem_client_read_transition
+ossl_statem_client_write_transition
+ossl_statem_server13_write_transition
+ossl_statem_server_post_process_message
+ossl_statem_server_process_message
+ossl_statem_server_read_transition
+ossl_statem_server_write_transition
+SSL_add_dir_cert_subjects_to_stack
+SSL_add_file_cert_subjects_to_stack
+ssl_check_srvr_ecc_cert_and_alg
+SSL_client_hello_get1_extensions_present
+SSL_COMP_add_compression_method
+SSL_CTX_set_client_cert_engine
+SSL_CTX_set_ct_validation_callback
+SSL_CTX_set_session_id_context
+SSL_CTX_set_tlsext_max_fragment_length
+SSL_CTX_use_RSAPrivateKey_ASN1
+SSL_CTX_use_RSAPrivateKey_file
+ssl_log_rsa_client_key_exchange
+SSL_set_ct_validation_callback
+SSL_set_tlsext_max_fragment_length
+SSL_verify_client_post_handshake
+bad ssl filetype
+invalid compression algorithm
+null ssl ctx
+null ssl method passed
+signature algorithms error
+ssl3 ext invalid servername
+ssl3 session id too long
+sslv3 alert bad certificate
+sslv3 alert bad record mac
+sslv3 alert handshake failure
+sslv3 alert illegal parameter
+sslv3 alert no certificate
+ssl command section empty
+ssl command section not found
+ssl handshake failure
+ssl library has no ciphers
+ssl negative length
+ssl section empty
+ssl section not found
+ssl session id conflict
+ssl session id has bad length
+ssl session id too long
+ssl session version mismatch
+unknown ssl version
+unsupported ssl version
+wrong ssl version
+d2i_SSL_SESSION
+do_ssl3_write
+OPENSSL_init_ssl
+ossl_statem_server_post_work
+ssl3_change_cipher_state
+ssl3_check_cert_and_algorithm
+ssl3_ctrl
+ssl3_ctx_ctrl
+ssl3_digest_cached_records
+ssl3_do_change_cipher_spec
+ssl3_enc
+ssl3_final_finish_mac
+ssl3_finish_mac
+ssl3_generate_key_block
+ssl3_generate_master_secret
+ssl3_get_record
+ssl3_init_finished_mac
+ssl3_output_cert_chain
+ssl3_read_bytes
+ssl3_read_n
+ssl3_setup_key_block
+ssl3_setup_read_buffer
+ssl3_setup_write_buffer
+ssl3_write_bytes
+ssl3_write_pending
+ssl_add_cert_chain
+ssl_add_cert_to_wpacket
+ssl_bad_method
+ssl_build_cert_chain
+SSL_bytes_to_cipher_list
+ssl_cache_cipherlist
+ssl_cert_add0_chain_cert
+ssl_cert_dup
+ssl_cert_new
+ssl_cert_set0_chain
+SSL_check_private_key
+ssl_check_srp_ext_ClientHello
+ssl_choose_client_version
+SSL_CIPHER_description
+ssl_cipher_list_to_bytes
+ssl_cipher_process_rulestr
+ssl_cipher_strength_sort
+SSL_clear
+SSL_CONF_cmd
+ssl_create_cipher_list
+SSL_ctrl
+SSL_CTX_check_private_key
+SSL_CTX_enable_ct
+ssl_ctx_make_profiles
+SSL_CTX_new
+SSL_CTX_set_alpn_protos
+SSL_CTX_set_cipher_list
+SSL_CTX_set_ssl_version
+SSL_CTX_use_certificate
+SSL_CTX_use_certificate_ASN1
+SSL_CTX_use_certificate_file
+SSL_CTX_use_PrivateKey
+SSL_CTX_use_PrivateKey_ASN1
+SSL_CTX_use_PrivateKey_file
+SSL_CTX_use_psk_identity_hint
+SSL_CTX_use_RSAPrivateKey
+SSL_CTX_use_serverinfo
+SSL_CTX_use_serverinfo_ex
+SSL_CTX_use_serverinfo_file
+ssl_dane_dup
+SSL_dane_enable
+ssl_derive
+ssl_do_config
+SSL_do_handshake
+SSL_dup_CA_list
+SSL_enable_ct
+ssl_generate_pkey_group
+ssl_generate_session_id
+ssl_get_new_session
+ssl_get_prev_session
+ssl_handshake_hash
+ssl_init_wbio_buffer
+SSL_key_update
+SSL_load_client_CA_file
+ssl_module_init
+SSL_new
+ssl_next_proto_validate
+SSL_peek
+SSL_peek_ex
+ssl_peek_internal
+SSL_read
+SSL_read_early_data
+SSL_read_ex
+ssl_read_internal
+SSL_renegotiate
+SSL_renegotiate_abbreviated
+ssl_session_dup
+SSL_SESSION_new
+SSL_SESSION_print_fp
+SSL_SESSION_set1_id
+SSL_SESSION_set1_id_context
+SSL_set_alpn_protos
+ssl_set_cert
+ssl_set_cert_and_key
+SSL_set_cipher_list
+SSL_set_fd
+ssl_set_pkey
+SSL_set_rfd
+SSL_set_session
+SSL_set_session_id_context
+SSL_set_session_ticket_ext
+SSL_set_wfd
+SSL_shutdown
+SSL_SRP_CTX_init
+ssl_start_async_job
+ssl_undefined_function
+ssl_undefined_void_function
+SSL_use_certificate
+SSL_use_certificate_ASN1
+SSL_use_certificate_file
+SSL_use_PrivateKey
+SSL_use_PrivateKey_ASN1
+SSL_use_PrivateKey_file
+SSL_use_psk_identity_hint
+SSL_use_RSAPrivateKey
+SSL_use_RSAPrivateKey_ASN1
+SSL_use_RSAPrivateKey_file
+ssl_validate_ct
+ssl_verify_cert_chain
+SSL_write
+SSL_write_early_data
+SSL_write_ex
+ssl_write_internal
+X509_ALGORS
+X509_ALGOR
+OpenSSL CMAC method
+openssl_conf
+OPENSSL_init
+OPENSSL_finish
+OPENSSL_CONF
+openssl.cnf
+%s:%d: OpenSSL internal error: %s
+/usr/local/ssl/ct_log_list.cnf
+OpenSSL X9.42 DH method
+OpenSSL PKCS#3 DH method
+OpenSSL DH Method
+OpenSSL DSA method
+OpenSSL EC algorithm
+(1OpenSSL EC_KEY method
+OpenSSL ED448 algorithm
+OpenSSL ED25519 algorithm
+OpenSSL X448 algorithm
+OpenSSL X25519 algorithm
+OPENSSL_ENGINES
+SSL routines
+%s algorithm "%s" unsupported
+OpenSSL HMAC method
+nsSslServerName
+Netscape SSL Server Name
+X500algorithms
+whirlpool
+supportedAlgorithms
+brainpoolP160r1
+brainpoolP160t1
+brainpoolP192r1
+brainpoolP192t1
+brainpoolP224r1
+brainpoolP224t1
+brainpoolP256r1
+brainpoolP256t1
+brainpoolP320r1
+brainpoolP320t1
+brainpoolP384r1
+brainpoolP384t1
+brainpoolP512r1
+brainpoolP512t1
+id-tc26-algorithms
+directory services - algorithms
+signatureAlgorithm
+hashAlgorithm
+key_enc_algor
+OpenSSL POLY1305 method
+OpenSSL NIST SP 800-90A DRBG
+Hash Algorithm: 
+Mask Algorithm: 
+OpenSSL RSA-PSS method
+OpenSSL RSA method
+maskGenAlgorithm
+OpenSSL PKCS#1 RSA
+sslv23
+OpenSSL SIPHASH method
+    Signature Algorithm: 
+%12sPublic Key Algorithm: 
+/usr/local/ssl/private
+/usr/local/ssl
+/usr/local/ssl/certs
+/usr/local/ssl/cert.pem
+SSL_CERT_DIR
+SSL_CERT_FILE
+Suite B: invalid public key algorithm
+Suite B: invalid signature algorithm
+CA signature digest algorithm too weak
+SSL client
+sslclient
+Netscape SSL server
+nssslserver
+sig_algor
+OpenSSL 'dlfcn' shared library method
+(TEST_ENG_OPENSSL_PKEY)Loading Private key %s
+(TEST_ENG_OPENSSL_RC4) test_init_key() called
+openssl
+unknown pbe algorithm
+unsupported algorithm
+unsupported private key algorithm
+pkcs12 algor cipherinit error
+unknown digest algorithm
+OPENSSL_asc2uni
+OPENSSL_uni2asc
+OPENSSL_uni2utf8
+OPENSSL_utf82uni
+random pool overflow
+random pool underflow
+rand_pool_acquire_entropy
+rand_pool_add
+rand_pool_add_begin
+rand_pool_add_end
+rand_pool_attach
+rand_pool_bytes_needed
+rand_pool_grow
+rand_pool_new
+error entropy pool was ignored
+algorithm mismatch
+sslv3 rollback attack
+unknown algorithm type
+unsupported mask algorithm
+rsa_algor_to_md
+rsa_ossl_private_decrypt
+rsa_ossl_private_encrypt
+rsa_ossl_public_decrypt
+rsa_ossl_public_encrypt
+RSA_padding_add_SSLv23
+RSA_padding_check_SSLv23
+ossl_store_attach_pem_bio
+OSSL_STORE_expect
+OSSL_STORE_find
+ossl_store_get0_loader_int
+OSSL_STORE_INFO_get1_CERT
+OSSL_STORE_INFO_get1_CRL
+OSSL_STORE_INFO_get1_NAME
+OSSL_STORE_INFO_get1_PARAMS
+OSSL_STORE_INFO_get1_PKEY
+OSSL_STORE_INFO_new_CERT
+OSSL_STORE_INFO_new_CRL
+ossl_store_info_new_EMBEDDED
+OSSL_STORE_INFO_new_NAME
+OSSL_STORE_INFO_new_PARAMS
+OSSL_STORE_INFO_new_PKEY
+ossl_store_init_once
+OSSL_STORE_LOADER_new
+OSSL_STORE_open
+OSSL_STORE_SEARCH_by_alias
+OSSL_STORE_SEARCH_by_name
+ossl_store_file_attach_pem_bio_int
+OSSL_STORE_INFO_get1_NAME_description
+OSSL_STORE_INFO_set0_NAME_description
+ossl_store_register_loader_int
+OSSL_STORE_SEARCH_by_issuer_serial
+OSSL_STORE_SEARCH_by_key_fingerprint
+ossl_store_unregister_loader_int
+unsupported md algorithm
+TS_MSG_IMPRINT_set_algo
+OpenSSL NULL UI
+OpenSSL default user interface
+SSL Client
+SSL Server
+SSL CA
+sslCA
+unknown signature algorithm
+PKCS5_pbe_set0_algor
+unknown message digest algorithm
+failed to set pool
+invalid pool size
+BN_POOL_get
+OpenSSL default
+OPENSSL_atexit
+OPENSSL_buf2hexstr
+openssl_fopen
+OPENSSL_hexstr2buf
+OPENSSL_init_crypto
+OPENSSL_LH_new
+OPENSSL_sk_deep_copy
+OPENSSL_sk_dup
+ossl_ecdh_compute_key
+ossl_ecdsa_sign_sig
+ossl_ecdsa_verify_sig
+default_algorithms
+ENGINE_load_ssl_client_cert
+ossl_hmac_init
+QUEUE_EMPTY(&loop->wq) && "thread pool work queue not empty!"
+(stream->type == UV_TCP || stream->type == UV_NAMED_PIPE || stream->type == UV_TTY) && "uv_write (unix) does not yet support other types of streams"
+stream->type == UV_TCP || stream->type == UV_NAMED_PIPE || stream->type == UV_TTY
+stream->type == UV_TCP || stream->type == UV_NAMED_PIPE
+stream->type == UV_TCP || stream->type == UV_TTY || stream->type == UV_NAMED_PIPE
+src/unix/tcp.c
+handle->type == UV_TCP
+UV_TCP_SINGLE_ACCEPT
+uv__tcp_connect
+UV_THREADPOOL_SIZE
+src/threadpool.c
+/home/buildbot/xmrig/scripts/build/hwloc-2.9.0/include/hwloc/plugins.h
+/home/buildbot/xmrig/scripts/build/hwloc-2.9.0/include/hwloc/helper.h
+%s GhostRider algo %d: %s
+/tcp
+__vdso_getcpu

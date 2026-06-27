@@ -1,0 +1,110 @@
+.
+├── Appendix_Artefacts
+│   └── appendix_A_tree_L3.txt
+├── Dissertation_Figures
+├── HOME
+│   └── Cryptojacking_Project
+│       ├── Logs
+│       └── Reports
+├── Logs
+│   └── test_case1_hash.txt
+├── MemoryDumps
+│   ├── clean_case.bin
+│   ├── clean_fake.bin
+│   ├── fake_dump.bin
+│   ├── infected_case.bin
+│   └── realistic_infected.bin
+├── Miner_Samples
+│   ├── fake_network_config.txt
+│   ├── useful_strings.txt
+│   ├── xmrig-6.21.0
+│   │   ├── config.json
+│   │   ├── SHA256SUMS
+│   │   └── xmrig
+│   ├── xmrig-6.21.0-linux-static-x64.tar.gz
+│   └── xmrig-6.21.0-linux-static-x64.tar.gz.1
+├── Reports
+│   ├── case_demo_hash.txt
+│   ├── case_demo_pslist.txt
+│   ├── case_demo_strings.txt
+│   ├── case_demo_summary.txt
+│   ├── case_demo_yara.txt
+│   ├── case_infected_hash.txt
+│   ├── case_infected_strings.txt
+│   ├── case_infected_summary.txt
+│   ├── case_infected_yara.txt
+│   ├── case_real1_hash.txt
+│   ├── case_real1_strings.txt
+│   ├── case_real1_summary.txt
+│   ├── case_real1_yara.txt
+│   ├── clean_case
+│   │   ├── clean_case_hash.txt
+│   │   ├── clean_case_strings.txt
+│   │   ├── clean_case_summary.txt
+│   │   └── clean_case_yara.txt
+│   ├── clean_case2_hash.txt
+│   ├── clean_case2_strings.txt
+│   ├── clean_case2_summary.txt
+│   ├── clean_case2_yara.txt
+│   ├── clean_case_hash.txt
+│   ├── clean_case_strings.txt
+│   ├── clean_case_summary.txt
+│   ├── clean_case_yara.txt
+│   ├── infected_case
+│   │   ├── infected_case_hash.txt
+│   │   ├── infected_case_strings.txt
+│   │   ├── infected_case_summary.txt
+│   │   └── infected_case_yara.txt
+│   ├── miner_rules_scan.txt
+│   ├── miner_sample_analysis.txt
+│   ├── miner_strings_xmrig.txt
+│   ├── miner_xmrig_hash.txt
+│   ├── network_rules_scan.txt
+│   ├── process_rules_scan.txt
+│   ├── test_case1_hash.txt
+│   ├── test_case1_netscan.txt
+│   ├── test_case1_pslist.txt
+│   ├── test_case1_strings.txt
+│   ├── test_case1_summary.txt
+│   ├── test_case1_yara.txt
+│   ├── test_case2_hash.txt
+│   ├── test_case2_strings.txt
+│   ├── test_case2_summary.txt
+│   ├── test_case2_yara.txt
+│   ├── test_case3_hash.txt
+│   ├── test_case3_strings.txt
+│   ├── test_case3_summary.txt
+│   └── test_case3_yara.txt
+├── Scripts
+│   ├── run_pipeline.sh
+│   └── run_yara.sh
+├── test_sample.txt
+├── Tools
+│   ├── full_pipeline_backup.py
+│   └── full_pipeline.py
+├── venv
+│   ├── bin
+│   │   ├── activate
+│   │   ├── activate.csh
+│   │   ├── activate.fish
+│   │   ├── Activate.ps1
+│   │   ├── pip
+│   │   ├── pip3
+│   │   ├── pip3.12
+│   │   ├── python -> python3
+│   │   ├── python3 -> /usr/bin/python3
+│   │   ├── python3.12 -> python3
+│   │   ├── vol
+│   │   └── volshell
+│   ├── include
+│   │   └── python3.12
+│   ├── lib
+│   │   └── python3.12
+│   ├── lib64 -> lib
+│   └── pyvenv.cfg
+└── YARA_Rules
+    ├── miner_rules.yar
+    ├── network_rules.yar
+    └── process_rules.yar
+
+24 directories, 84 files
