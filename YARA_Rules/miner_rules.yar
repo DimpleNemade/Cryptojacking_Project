@@ -14,7 +14,7 @@ rule xmrig_indicators {
        1 of ($name*) or 2 of ($cfg*)
 }
 
-rule generic_startum_miner {
+rule generic_stratum_miner {
     meta:
         family = "generic_stratum"
         description = "Generic stratum-based mining traffic/config"
@@ -27,19 +27,4 @@ rule generic_startum_miner {
         $w2 = "mining" ascii
     condition:
         (1 of ($s*) and (1 of ($p*) or 1 of ($w*)))
-}
-
-rule wallet_like_strings {
-    meta:
-        family = "wallet_hint"
-        descripttion = "Wallet-style strings (very rough)"
-    strings:
-        // BTC-style (very approximate)
-        $btc = /[13][a-km-zA-HJ-NP-Z1-9]{25,34}/
-
-        //XMR-style (very approximate)
-        $xmr = /4[0-9AB][1-9A-HJ-NP-Za-km-z]{93}/
-
-    condition:
-        any of ($btc,$xmr)
 }
