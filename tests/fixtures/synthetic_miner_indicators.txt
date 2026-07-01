@@ -1,0 +1,6 @@
+Synthetic test data only; this is not executable malware.
+xmrig
+stratum+tcp://example.invalid:3333
+donate-level
+randomx
+
