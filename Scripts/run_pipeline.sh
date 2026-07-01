@@ -1,22 +1,12 @@
 #!/usr/bin/env bash
-set -e
+set -euo pipefail
 
-if [ $# -ne 2 ]; then
-echo "Usage: $0 <dump_file> <case_id>"
-exit 1
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <evidence_file> <case_id>" >&2
+    exit 2
 fi
 
-DUMP="$1"
-CASE="$2"
-
-echo "[+] Running YARA scans..."
-yara -r YARA_Rules/miner_rules.yar "$DUMP" | tee "Reports/${CASE}_yara.txt"
-
-echo "[+] Extracting strings..."
-strings "$DUMP" | grep -i -E "stratum|xmrig|miner" | tee "Reports/${CASE}_strings.txt"
-
-echo "[+] Computing SHA256..."
-sha256sum "$DUMP" | tee "Reports/${CASE}_hash.txt"
-
-echo "[+] Pipeline complete: Reports saved in Reports/${CASE}_*.txt"
+PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$PROJECT_ROOT"
+exec python3 -m cryptojacking_forensics --memory "$1" --case-id "$2"
 
