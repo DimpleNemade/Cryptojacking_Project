@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Convenience task runner for cj-triage development.
 
 All tasks are thin wrappers around standard commands. Raw commands are shown so the
