@@ -1,0 +1,11 @@
+include AGENTS.md
+include CHANGELOG.md
+include CODE_OF_CONDUCT.md
+include CONTRIBUTING.md
+include LICENSE
+include NOTICE
+include README.md
+include SECURITY.md
+include tests/conftest.py
+recursive-include docs *.html *.md
+recursive-include tests/fixtures *.txt

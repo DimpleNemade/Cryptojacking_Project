@@ -15,14 +15,14 @@ This project follows a strict safe-sample policy.
 
 ## Historical cleanup
 On 2026-08-09 the tracked repository removed:
-- the Windows-invalid path `...` (stray Volatility error output),
-- the XMRig executable `Miner_Samples/xmrig-6.21.0/xmrig`,
-- the archive `Miner_Samples/xmrig-6.21.0-linux-static-x64.tar.gz.1`,
-- `SHA256SUMS` and `config.json` from that directory.
+- one Windows-invalid repository-root entry, and
+- previously tracked executable, archive, checksum, and configuration artifacts
+  that are prohibited by this policy.
 
 These remain in Git history. A history rewrite was **not** performed because it is
 destructive and requires separate explicit owner approval. The current working tree
-and all future commits no longer distribute them.
+may still contain locally quarantined, ignored material; the tracked tree and future
+commits must not distribute it.
 
 ## Contribution rule
 Never commit samples listed as prohibited. Real-world corpora belong in an

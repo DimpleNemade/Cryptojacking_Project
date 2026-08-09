@@ -1,19 +1,23 @@
 # Supported Platform Policy
 
-## Supported
-- **Operating systems**: Windows 10+ and Ubuntu 22.04+ (validated in CI).
-- **Python**: CPython 3.10, 3.11, 3.12.
-- **Architecture**: x86-64.
+## Locally validated for 0.1.0a2
 
-## In-process engine
-- `yara-python` >= 4.3, < 5 (wheels available for the supported matrix).
+- Windows 11 10.0.26200, x86-64.
+- CPython 3.12.4.
+- `yara-python` 4.5.4.
 
-## Not yet supported / unverified
-- macOS, other Linux distributions, ARM64: may work but are not CI-validated.
-- Python < 3.10 or >= 3.13: untested.
-- Any "memory forensics" claim: only via a real framework (e.g. Volatility 3) feeding
-  structured output; not implemented in the alpha.
+## CI contract
 
-## Support commitment (alpha)
-During the alpha phase, only the latest prerelease line is supported. Issues are
-triaged best-effort. There is no SLA.
+The repository configures Windows and Ubuntu runners for CPython 3.10, 3.11, and
+3.12. A platform/version combination is release-validated only when the exact
+release commit has a green required CI job. Workflow configuration alone is not a
+test result.
+
+## Not validated
+
+- macOS and ARM64.
+- Python below 3.10 or 3.13 and later; package metadata rejects these versions.
+- Other YARA implementations or versions outside `>=4.3,<5`.
+- Operating-system memory-analysis behavior; this tool scans supplied files.
+
+Alpha support is best-effort and has no SLA.

@@ -61,6 +61,9 @@ corresponding process was running.
 - Privacy-safe defaults omit raw strings and absolute paths; raw output is available
   only via explicit `--raw` opt-in, and redaction for disclosure remains the analyst's
   responsibility.
+- SHA-256 representations of matched values are pseudonyms, not guaranteed
+  anonymization. Common or low-entropy indicators may be recoverable by guessing and
+  re-hashing; reports still require handling appropriate to the evidence context.
 
 Findings are triage leads. They require analyst validation and must not be treated as
 final forensic conclusions.

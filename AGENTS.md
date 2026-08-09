@@ -83,6 +83,11 @@
 - Bound memory, output, scan duration, file count, and match count. Use atomic
   writes, deterministic ordering, restrictive output permissions where
   supported, and explicit handling for partial results.
+- Verify third-party API units against upstream documentation. In particular,
+  `yara-python` scan timeouts are whole seconds, not milliseconds.
+- Never embed a hash of a finalized manifest inside that same manifest. Hash
+  immutable sibling artifacts, write the manifest last, and verify paths remain
+  within the report directory.
 - Give every rule an owner, stable ID, version, purpose, supported input type,
   ATT&CK mapping where applicable, references, confidence rationale, and known
   false-positive conditions. Rule changes require positive, negative, boundary,
@@ -95,6 +100,9 @@
 - Run the smallest relevant tests while iterating and the complete supported
   suite before declaring work finished. If tests cannot run, report the exact
   reason and do not substitute historical results.
+- A configured CI matrix is not evidence that a revision passed it. Record local
+  and remote environments separately and cite an exact green commit/check run for
+  remote platform claims.
 - Test supported operating systems in clean environments. Mocked subprocess
   tests do not replace end-to-end tests with the actual supported engines.
 - For detection claims, use a documented, versioned corpus with known labels,
@@ -123,4 +131,3 @@
   tests, exit gate, and evidence link. Dates are estimates, not promises.
 - At handoff, state what was inspected, what changed, what was verified, what
   could not be verified, and any safety-relevant workspace state.
-

@@ -8,4 +8,3 @@ class InvalidCaseID(TriageError, ValueError):
 
 class UnsafeOutputPath(TriageError):
     """Raised when an output path escapes the reports root."""
-

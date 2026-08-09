@@ -1,13 +1,8 @@
-"""Manifest assembly for a triage run.
-
-Records OBSERVED evidence controls and tool/engine/rule versions. No field claims
-more than was actually observed. See docs/LIMITATIONS.md for the boundaries.
-"""
+"""Manifest assembly for a triage run."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -34,28 +29,28 @@ class ManifestInput:
     outputs: dict[str, Any]
     limitations: list[str]
     tool_name: str = "cryptojacking-forensics"
-    tool_version: str = "0.1.0a1"
+    tool_version: str = "0.1.0a2"
 
 
-def build_manifest(m: ManifestInput) -> dict[str, Any]:
+def build_manifest(value: ManifestInput) -> dict[str, Any]:
     return {
         "schema_version": SCHEMA_VERSION,
-        "tool": {"name": m.tool_name, "version": m.tool_version},
-        "case_id": m.case_id,
-        "run_id": m.run_id,
-        "started_at": m.started_at,
-        "finished_at": m.finished_at,
-        "analysis_status": m.analysis_status,
-        "evidence": m.evidence,
-        "engine": m.engine,
-        "rule_pack": m.rule_pack,
-        "limits": m.limits,
-        "stages": m.stages,
-        "outputs": m.outputs,
-        "warnings": m.warnings,
-        "errors": m.errors,
-        "truncation": m.truncation,
-        "limitations": m.limitations,
+        "tool": {"name": value.tool_name, "version": value.tool_version},
+        "case_id": value.case_id,
+        "run_id": value.run_id,
+        "started_at": value.started_at,
+        "finished_at": value.finished_at,
+        "analysis_status": value.analysis_status,
+        "evidence": value.evidence,
+        "engine": value.engine,
+        "rule_pack": value.rule_pack,
+        "limits": value.limits,
+        "stages": value.stages,
+        "outputs": value.outputs,
+        "warnings": value.warnings,
+        "errors": value.errors,
+        "truncation": value.truncation,
+        "limitations": value.limitations,
     }
 
 
@@ -64,14 +59,10 @@ def write_manifest(path: Path, manifest: dict[str, Any]) -> None:
 
 
 def output_hashes(output_paths: list[Path]) -> list[dict[str, str]]:
-    result = []
-    for p in output_paths:
-        if p.exists():
-            result.append(
-                {
-                    "name": p.name,
-                    "display_path": str(p),
-                    "sha256": hash_file_sha256(p),
-                }
-            )
-    return result
+    """Hash immutable sibling artifacts; the manifest never hashes itself."""
+
+    return [
+        {"name": path.name, "sha256": hash_file_sha256(path)}
+        for path in sorted(output_paths, key=lambda item: item.name)
+        if path.is_file()
+    ]

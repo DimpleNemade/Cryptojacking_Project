@@ -1,0 +1,10 @@
+Cryptojacking Artifact Triage
+Copyright 2026 Dimple Nemade
+
+This product depends on yara-python, distributed under the Apache License 2.0.
+yara-python statically links the YARA engine in its standard wheels; the upstream
+YARA project is distributed under the BSD 3-Clause License. Those projects retain
+their own copyright and license notices.
+
+Project-authored YARA rules and inert synthetic fixtures are distributed under
+this project's Apache License 2.0 unless a file states otherwise.

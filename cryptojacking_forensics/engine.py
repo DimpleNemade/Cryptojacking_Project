@@ -1,12 +1,9 @@
-"""In-process YARA scanning using yara-python.
-
-Replaces the earlier PATH-resolved `yara` subprocess. See docs/adr/0001.
-Engine identity and version come from the resolved import, not from a shell lookup.
-"""
+"""In-process YARA scanning using yara-python."""
 
 from __future__ import annotations
 
-import time
+import hashlib
+import math
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
@@ -15,19 +12,16 @@ import yara
 
 from .hashing import sha256_file
 
-# yara-python exposes no clean __version__ on all builds; derive from the module.
 ENGINE_NAME = "yara-python"
-try:  # pragma: no cover - environment dependent
-    ENGINE_VERSION = getattr(yara, "__version__", "unknown")
-except Exception:  # pragma: no cover
-    ENGINE_VERSION = "unknown"
+ENGINE_VERSION = str(getattr(yara, "__version__", "unknown"))
+MAX_MATCHED_VALUE_CHARACTERS = 200
 
 
 class ScanError(Exception):
-    """Raised when scanning cannot complete (engine failure, timeout, limit)."""
+    """Raised when YARA rules cannot be compiled."""
 
 
-@dataclass
+@dataclass(frozen=True)
 class Match:
     rule_id: str
     rule_name: str
@@ -40,85 +34,137 @@ class Match:
 @dataclass
 class ScanResult:
     matches: list[Match] = field(default_factory=list)
-    status: str = "SUCCESS"  # SUCCESS | PARTIAL | FAILED
+    status: str = "SUCCESS"
     error: str | None = None
     truncated: bool = False
     match_count: int = 0
 
 
-def compile_rules(rule_files: list[Path]) -> "yara.Rules":
-    """Compile all bundled rules. Raises ScanError on failure with the reason."""
+def compile_rules(rule_files: list[Path]) -> yara.Rules:
     if not rule_files:
         raise ScanError("no rule files provided")
     try:
         return yara.compile(
-            filepaths={p.name: str(p) for p in rule_files},
+            filepaths={path.name: str(path) for path in rule_files},
             includes=False,
         )
-    except yara.SyntaxError as exc:
-        raise ScanError(f"rule compilation failed: {exc}") from exc
-    except yara.Error as exc:
+    except (yara.SyntaxError, yara.Error) as exc:
         raise ScanError(f"rule compilation failed: {exc}") from exc
 
 
 def _rule_id_for(rule_name: str, meta: dict[str, Any]) -> str:
-    rid = meta.get("rule_id")
-    return str(rid) if rid else rule_name
+    return str(meta.get("rule_id") or rule_name)
+
+
+def _collect(raw_matches: list[Any], max_matches: int) -> ScanResult:
+    collected: list[Match] = []
+    for rule_match in raw_matches:
+        rule_id = _rule_id_for(rule_match.rule, rule_match.meta)
+        for string_match in rule_match.strings:
+            for instance in string_match.instances:
+                collected.append(
+                    Match(
+                        rule_id=rule_id,
+                        rule_name=rule_match.rule,
+                        namespace=getattr(rule_match, "namespace", "") or "default",
+                        string_id=string_match.identifier,
+                        offset=int(instance.offset),
+                        matched_value=instance.matched_data.decode("utf-8", "replace")[
+                            :MAX_MATCHED_VALUE_CHARACTERS
+                        ],
+                    )
+                )
+
+    collected.sort(
+        key=lambda item: (
+            item.offset,
+            item.rule_id,
+            item.rule_name,
+            item.string_id,
+            item.matched_value,
+        )
+    )
+    truncated = len(collected) > max_matches
+    collected = collected[:max_matches]
+    return ScanResult(
+        matches=collected,
+        status="PARTIAL" if truncated else "SUCCESS",
+        truncated=truncated,
+        match_count=len(collected),
+    )
+
+
+def _run_match(
+    rules: yara.Rules,
+    *,
+    timeout_seconds: float,
+    max_matches: int,
+    data: bytes | None = None,
+    filepath: Path | None = None,
+) -> ScanResult:
+    if timeout_seconds <= 0:
+        return ScanResult(status="FAILED", error="scan deadline exceeded")
+    if max_matches < 1:
+        return ScanResult(status="FAILED", error="max_matches must be positive")
+
+    # yara-python documents timeout in whole seconds, not milliseconds.
+    timeout = max(1, math.ceil(timeout_seconds))
+    try:
+        if filepath is not None:
+            raw = rules.match(filepath=str(filepath), timeout=timeout)
+        else:
+            raw = rules.match(data=data, timeout=timeout)
+    except yara.TimeoutError:
+        return ScanResult(status="FAILED", error="scan deadline exceeded")
+    except yara.Error as exc:
+        return ScanResult(status="FAILED", error=f"scan engine error: {exc}")
+    return _collect(raw, max_matches)
+
+
+def scan_file(
+    rules: yara.Rules,
+    path: Path,
+    *,
+    timeout_seconds: float = 30.0,
+    max_matches: int = 5_000,
+) -> ScanResult:
+    """Scan a file through YARA without first loading it into Python memory."""
+
+    return _run_match(
+        rules,
+        filepath=path,
+        timeout_seconds=timeout_seconds,
+        max_matches=max_matches,
+    )
 
 
 def scan_bytes(
-    rules: "yara.Rules",
+    rules: yara.Rules,
     data: bytes,
     *,
-    timeout_ms: int = 30_000,
+    timeout_seconds: float = 30.0,
     max_matches: int = 5_000,
 ) -> ScanResult:
-    """Scan in-memory bytes. Enforces deadline and match cap; never reports
-    timeout/engine failure as a clean result."""
-    try:
-        raw = rules.match(data=data, timeout=timeout_ms)
-    except yara.TimeoutError:
-        return ScanResult(status="FAILED", error="scan deadline exceeded", match_count=0)
-    except yara.Error as exc:
-        return ScanResult(status="FAILED", error=f"scan engine error: {exc}", match_count=0)
+    """Scan supplied bytes (primarily for tests and API callers)."""
 
-    collected: list[Match] = []
-    truncated = False
-    for rm in raw:
-        rid = _rule_id_for(rm.rule, rm.meta)
-        for s in rm.strings:
-            for inst in s.instances:
-                if len(collected) >= max_matches:
-                    truncated = True
-                    break
-                collected.append(
-                    Match(
-                        rule_id=rid,
-                        rule_name=rm.rule,
-                        namespace=getattr(rm, "namespace", "") or "default",
-                        string_id=s.identifier,
-                        offset=inst.offset,
-                        matched_value=inst.matched_data.decode("utf-8", "replace")[:200],
-                    )
-                )
-            if truncated:
-                break
-        if truncated:
-            break
-
-    status = "PARTIAL" if truncated else "SUCCESS"
-    return ScanResult(matches=collected, status=status, truncated=truncated, match_count=len(collected))
+    return _run_match(
+        rules,
+        data=data,
+        timeout_seconds=timeout_seconds,
+        max_matches=max_matches,
+    )
 
 
 def rule_file_hashes(rule_files: list[Path]) -> tuple[str, list[dict[str, str]]]:
-    """Return (canonical_pack_digest, per-file records)."""
-    records = []
-    digests = []
-    for p in sorted(rule_files, key=lambda x: x.name):
-        d = sha256_file(p)
-        digests.append(d)
-        records.append({"name": p.name, "sha256": d})
-    import hashlib
+    """Return a filename-sensitive canonical pack digest and per-file hashes."""
 
-    pack = hashlib.sha256("".join(digests).encode()).hexdigest()
-    return pack, records
+    records: list[dict[str, str]] = []
+    digest = hashlib.sha256()
+    for path in sorted(rule_files, key=lambda item: item.name):
+        file_digest = sha256_file(path)
+        records.append({"name": path.name, "sha256": file_digest})
+        digest.update(path.name.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(file_digest.encode("ascii"))
+        digest.update(b"\n")
+    return digest.hexdigest(), records

@@ -4,6 +4,32 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/); versioning follows SemVer where
 applicable, with alpha prereleases using `0.1.0aN`.
 
+## [0.1.0a2] - 2026-08-09
+
+### Fixed
+- Corrected the YARA timeout unit from an erroneous millisecond value to the
+  engine's documented whole-second parameter.
+- Replaced whole-file Python reads with direct YARA file scanning and bounded,
+  streaming ASCII/UTF-16LE extraction.
+- Removed the unverifiable manifest self-hash; manifest verification now checks
+  immutable sibling artifacts and detects schema-valid tampering.
+- Made findings order deterministic by content and added real byte offsets for
+  extracted-string indicators.
+- Redacted matched values by default while retaining SHA-256 representations.
+- Added file identity checks, actual start/finish times, effective limits, and
+  per-rule hashes to the manifest.
+- Tightened all report schemas and made `jsonschema` a runtime dependency.
+- Made lint, pre-commit, coverage, clean-wheel smoke, and SBOM commands enforceable.
+- Replaced the abbreviated license text with the complete Apache License 2.0 and
+  added third-party notices to source distributions.
+
+### Changed
+- Removed the unvalidated triage score from the report contract.
+- Versioned `findings.json` as a document rather than an unversioned top-level array.
+- Raised the measured CI coverage gate to 85%.
+- Added required format and static-type checks to the local pre-commit contract.
+- Corrected README, platform, architecture, release, and validation claims.
+
 ## [0.1.0a1] - 2026-08-09
 
 ### Added

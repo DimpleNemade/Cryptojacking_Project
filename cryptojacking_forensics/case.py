@@ -52,9 +52,17 @@ def create_case_run(reports_root: Path, case_id: str) -> CaseRun:
     safe_case_id = validate_case_id(case_id)
     root = reports_root.resolve()
     root.mkdir(parents=True, exist_ok=True)
+    try:
+        root.chmod(0o700)
+    except OSError:
+        pass
 
     case_dir = ensure_contained(root, root / safe_case_id)
     case_dir.mkdir(parents=False, exist_ok=True)
+    try:
+        case_dir.chmod(0o700)
+    except OSError:
+        pass
     # Re-check after mkdir to catch a pre-existing symlink aimed outside Reports.
     case_dir = ensure_contained(root, case_dir)
 
@@ -65,10 +73,13 @@ def create_case_run(reports_root: Path, case_id: str) -> CaseRun:
             run_dir.mkdir(parents=False, exist_ok=False)
         except FileExistsError:
             continue
+        try:
+            run_dir.chmod(0o700)
+        except OSError:
+            pass
         return CaseRun(safe_case_id, run_id, root, run_dir)
     raise TriageRunCollision("could not allocate a unique run directory")
 
 
 class TriageRunCollision(RuntimeError):
     pass
-

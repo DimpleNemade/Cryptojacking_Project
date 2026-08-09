@@ -28,8 +28,12 @@ class EvidenceRecord:
     accessed_at: str | None = None
     stat_mtime_before: float = 0.0
     stat_size_before: int = 0
+    stat_device_before: int = 0
+    stat_inode_before: int = 0
     stat_mtime_after: float | None = None
     stat_size_after: int | None = None
+    stat_device_after: int | None = None
+    stat_inode_after: int | None = None
     external_modification: str = "NOT_CHECKED"
     observed_controls: list[str] = field(default_factory=list)
     control_limitations: list[str] = field(default_factory=list)
@@ -63,6 +67,8 @@ def inspect_before(path: Path) -> EvidenceRecord:
         accessed_at=_now(),
         stat_mtime_before=stat.st_mtime,
         stat_size_before=stat.st_size,
+        stat_device_before=stat.st_dev,
+        stat_inode_before=stat.st_ino,
     )
     record.observed_controls.append("opened input read-only (rb)")
     record.observed_controls.append("read input byte content for SHA-256")
@@ -75,14 +81,25 @@ def inspect_before(path: Path) -> EvidenceRecord:
 
 
 def inspect_after(record: EvidenceRecord) -> EvidenceRecord:
+    if record.sha256_before is None:
+        raise ValueError("pre-analysis SHA-256 is unavailable")
     record.sha256_after = sha256_file(record.path)
     record.hash_verification = verify_hashes(record.sha256_before, record.sha256_after)
     stat = record.path.stat()
     record.stat_mtime_after = stat.st_mtime
     record.stat_size_after = stat.st_size
-    if record.stat_size_after != record.stat_size_before or record.stat_mtime_after != record.stat_mtime_before:
+    record.stat_device_after = stat.st_dev
+    record.stat_inode_after = stat.st_ino
+    changed = (
+        record.stat_size_after != record.stat_size_before
+        or record.stat_mtime_after != record.stat_mtime_before
+        or record.stat_device_after != record.stat_device_before
+        or record.stat_inode_after != record.stat_inode_before
+    )
+    if changed:
         record.external_modification = "DETECTED"
-        record.observed_controls.append("post-analysis stat shows size/mtime change")
+        record.observed_controls.append("post-analysis stat shows identity, size, or mtime change")
+        record.hash_verification = "FAIL"
     else:
         record.external_modification = "NONE"
     record.access_log.append(f"{_now()} CLOSE {record.path.name}")

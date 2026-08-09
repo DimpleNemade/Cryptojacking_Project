@@ -1,38 +1,46 @@
-# Architecture Overview
+# Architecture
 
-## Components
-
-```
-cj-triage (console_script)
-   -> cli.py            command parsing, exit codes, output discipline
-      -> case.py        case/run directory management (unique, contained)
-      -> evidence.py    read-only open, pre/post hashing, observed controls
-      -> engine.py      in-process YARA (yara-python) compile + scan
-      -> strings_extractor.py  bounded ASCII/UTF-16LE extraction
-      -> findings.py    build findings, evidence strength, correlation
-      -> manifest.py / reporting_ext.py  manifest + summary assembly
-      -> reporting.py   schema validation, atomic writes, hashing
-   rules/               bundled YARA rule pack (versioned, metadata-rich)
-   schemas/             versioned JSON Schemas (manifest/summary/findings)
+```text
+cj-triage
+  cli.py                 commands, status model, exit codes, privacy mode
+  case.py                contained, unique run directories
+  evidence.py            pre/post hash and file-identity observations
+  engine.py              in-process YARA file scanning
+  strings_extractor.py   bounded streaming ASCII/UTF-16LE extraction
+  findings.py            deterministic findings, redaction, correlation
+  reporting*.py          strict schemas, atomic writes, bundle verification
+  rules/                  packaged rule pack and metadata
+  schemas/                versioned public JSON contracts
 ```
 
-## Data flow
-1. `scan artifact INPUT --case-id C` resolves and validates the case ID.
-2. `evidence.inspect_before` opens read-only, records size/mtime, hashes (SHA-256).
-3. Input bytes are scanned in-process by the compiled rule pack.
-4. Strings are extracted with bounded caps (min length, max strings, max bytes).
-5. Findings are built with evidence strength + confidence + correlation.
-6. Report directory is created uniquely; outputs written atomically with 0o600.
-7. `evidence.inspect_after` re-hashes; integrity failure is a distinct terminal state.
-8. Manifest/summary/findings are schema-validated and hashed for tamper detection.
+## Scan flow
 
-## Design constraints (from AGENTS.md)
-- One package implementation, one documented command.
-- Fail closed: incomplete analysis is never reported as clean.
-- Privacy-safe defaults; raw output only on explicit opt-in.
-- No overclaimed forensic/legal guarantees.
+1. Validate the case ID and resolve the input.
+2. Record file identity and SHA-256 using read-only opens.
+3. Allocate a contained run directory so incomplete analyses can still report.
+4. Compile packaged or operator-selected YARA rules.
+5. Ask `yara-python` to scan the file directly with the remaining deadline.
+6. Stream printable ASCII and UTF-16LE strings with bounded storage and the same
+   stage deadline.
+7. Re-stat and re-hash the input. Any byte or identity change is terminal.
+8. Build deterministic findings, redact raw values unless explicitly requested,
+   and validate all documents against packaged schemas.
+9. Atomically write findings/summary, hash those immutable siblings, then write
+   the manifest. The manifest does not hash itself.
 
-## Extension points
-- New rules: add to `rules/` with the required metadata block; compile-checked in CI.
-- New engines: implement the same `compile_rules`/`scan_bytes` interface (ADR-0001).
-- New report formats: add a schema under `schemas/` and a writer in `reporting.py`.
+The deadline bounds YARA and string-analysis stages. Pre/post integrity hashing is
+allowed to finish even if the stage deadline is exhausted so the run can report an
+integrity result.
+
+## Security boundaries
+
+- The tool never intentionally opens the source for writing, but this does not
+  establish a hardware or OS write block.
+- Pre/post agreement establishes only that the observed bytes and identity did not
+  change during this run.
+- Report filenames are fixed, JSON is escaped by the encoder, writes are atomic,
+  and owner-only permissions are attempted where the platform supports them.
+- Raw matched values, raw strings, absolute input paths, and absolute report paths
+  are opt-in through `--raw`.
+- Missing rules, timeouts, truncation, read failures, and integrity failures cannot
+  produce a successful-clean exit.

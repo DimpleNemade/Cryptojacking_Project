@@ -6,6 +6,7 @@ runner is convenience only and never hides behavior.
 
 Usage:  python tasks.py <task>
 """
+
 from __future__ import annotations
 
 import subprocess
@@ -25,19 +26,37 @@ def setup() -> int:
 
 
 def test() -> int:
-    return _run([sys.executable, "-m", "pytest", "-ra"])
+    return _run(
+        [
+            sys.executable,
+            "-m",
+            "pytest",
+            "--cov=cryptojacking_forensics",
+            "--cov-report=term-missing",
+            "--cov-fail-under=85",
+        ]
+    )
 
 
 def lint() -> int:
-    return _run([sys.executable, "-m", "ruff", "check", "cryptojacking_forensics", "tests"])
+    return _run(
+        [
+            sys.executable,
+            "-m",
+            "pre_commit",
+            "run",
+            "--all-files",
+            "--show-diff-on-failure",
+        ]
+    )
 
 
 def build() -> int:
-    return _run([sys.executable, "-m", "build", "--wheel"])
+    return _run([sys.executable, "-m", "build"])
 
 
 def run_safe_fixture() -> int:
-    return _run(
+    result = _run(
         [
             sys.executable,
             "-m",
@@ -49,13 +68,18 @@ def run_safe_fixture() -> int:
             "TASKRUN",
         ]
     )
+    if result == 10:
+        return 0
+    print(f"Expected findings exit 10 from the synthetic fixture; received {result}")
+    return result or 1
 
 
 def validate() -> int:
     rc = 0
+    rc |= lint()
     rc |= _run([sys.executable, "-m", "cryptojacking_forensics", "doctor"])
     rc |= _run([sys.executable, "-m", "cryptojacking_forensics", "rules", "check"])
-    rc |= _run([sys.executable, "-m", "pytest", "-ra"])
+    rc |= test()
     return rc
 
 
@@ -65,6 +89,7 @@ TASKS = {
     "test": test,
     "lint": lint,
     "build": build,
+    "run": run_safe_fixture,
     "run-safe-fixture": run_safe_fixture,
     "validate": validate,
 }

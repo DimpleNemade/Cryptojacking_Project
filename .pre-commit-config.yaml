@@ -1,3 +1,5 @@
+exclude: ^(Cryptojacking_Project-main/|Miner_Samples/|Scripts/|Tools/legacy/|YARA_Rules/|tests/fixtures/)
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.6.0
@@ -8,14 +10,43 @@ repos:
       - id: check-added-large-files
         args: ["--maxkb=500"]
       - id: check-merge-conflict
-  - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.6.9
-    hooks:
-      - id: ruff
-        args: ["--fix"]
-      - id: ruff-format
   - repo: https://github.com/Yelp/detect-secrets
     rev: v1.5.0
     hooks:
       - id: detect-secrets
         args: ["--baseline", ".secrets.baseline"]
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff
+        entry: python -m ruff check
+        language: python
+        additional_dependencies: ["ruff>=0.12,<1"]
+        types: [python]
+        files: ^(cryptojacking_forensics|tests)/.*\.py$|^tasks\.py$
+      - id: ruff-format
+        name: ruff format
+        entry: python -m ruff format --check
+        language: python
+        additional_dependencies: ["ruff>=0.12,<1"]
+        types: [python]
+        files: ^(cryptojacking_forensics|tests)/.*\.py$|^tasks\.py$
+      - id: mypy
+        name: mypy
+        entry: python -m mypy cryptojacking_forensics tests tasks.py
+        language: python
+        additional_dependencies:
+          - "mypy>=1.11,<2"
+          - "types-jsonschema>=4,<5"
+          - "jsonschema>=4,<5"
+          - "pytest>=8,<9"
+          - "yara-python>=4.3,<5"
+        pass_filenames: false
+        types: [python]
+      - id: compile-rules
+        name: compile bundled YARA rules
+        entry: python -m cryptojacking_forensics rules check
+        language: python
+        additional_dependencies: ["jsonschema>=4,<5", "yara-python>=4.3,<5"]
+        pass_filenames: false
+        files: ^cryptojacking_forensics/rules/
