@@ -1,48 +1,32 @@
+"""Structured findings with evidence strength and corroboration.
+
+Replaces the prior "risk severity" model. We never present the capped indicator
+count as a probability or risk score. Each finding carries an evidence-strength
+(WEAK/MEDIUM/STRONG) derived from rule confidence, and an analytic confidence.
+Correlation is deterministic and independent of which match is seen first.
+"""
+
 from __future__ import annotations
 
 import re
 from dataclasses import asdict, dataclass, replace
-
-from .yara_scanner import parse_yara_matches
+from typing import Any
 
 LIMITATION = (
-    "This tool performs triage indicator scanning. It does not prove compromise by "
-    "itself. Findings require analyst validation."
+    "This tool performs triage indicator scanning over supplied artifacts. It does "
+    "not prove compromise by itself. Findings require analyst validation."
 )
 
-RULE_SEVERITY = {
-    "xmrig_indicators": ("HIGH", "HIGH"),
-    "generic_stratum_miner": ("MEDIUM", "MEDIUM"),
-    "crypto_network_indicators": ("MEDIUM", "LOW"),
-    "miner_process_names": ("MEDIUM", "MEDIUM"),
+# Rule confidence comes from rule metadata; map to evidence strength.
+RULE_EVIDENCE_STRENGTH = {
+    "CJ-MINER-001": "MEDIUM",
+    "CJ-NET-001": "MEDIUM",
+    "CJ-PROC-001": "WEAK",
 }
 
-SAFE_MATCH_VALUE_RULES = {
-    "xmrig_indicators",
-    "generic_stratum_miner",
-    "crypto_network_indicators",
-    "miner_process_names",
-}
-
-# These patterns identify format candidates only. They do not perform checksum,
-# ownership, activity, or cryptocurrency-network validation.
-WALLET_CANDIDATE_PATTERNS = (
-    (
-        "BITCOIN_STYLE",
-        re.compile(
-            r"(?<![1-9A-HJ-NP-Za-km-z])"
-            r"[13][a-km-zA-HJ-NP-Z1-9]{25,34}"
-            r"(?![1-9A-HJ-NP-Za-km-z])"
-        ),
-    ),
-    (
-        "MONERO_STYLE",
-        re.compile(
-            r"(?<![1-9A-HJ-NP-Za-km-z])"
-            r"4[0-9AB][1-9A-HJ-NP-Za-km-z]{93}"
-            r"(?![1-9A-HJ-NP-Za-km-z])"
-        ),
-    ),
+WALLET_PATTERNS = (
+    ("BITCOIN_STYLE", re.compile(r"(?<![1-9A-HJ-NP-Za-km-z])[13][a-km-zA-HJ-NP-Z1-9]{25,34}(?![1-9A-HJ-NP-Za-km-z])")),
+    ("MONERO_STYLE", re.compile(r"(?<![1-9A-HJ-NP-Za-km-z])4[0-9AB][1-9A-HJ-NP-Za-km-z]{93}(?![1-9A-HJ-NP-Za-km-z])")),
 )
 
 
@@ -51,10 +35,11 @@ class Finding:
     finding_id: str
     finding_type: str
     source: str
+    rule_id: str | None
     rule_name: str | None
     matched_indicator: str | None
     offset: int | None
-    severity: str
+    evidence_strength: str
     confidence: str
     explanation: str
     evidence_reference: str
@@ -62,168 +47,160 @@ class Finding:
     corroborates_finding_id: str | None = None
     independent_indicator: bool = True
     correlation_note: str = ""
-    limitation: str = LIMITATION
+    limitations: str = LIMITATION
 
-    def to_dict(self) -> dict[str, object]:
+    def to_dict(self) -> dict[str, Any]:
         return asdict(self)
 
 
 def build_findings(
-    yara_outputs: list[tuple[str, str]], strings_output: str, evidence_reference: str
+    scan_matches: list[dict[str, Any]],
+    string_result: Any,
+    evidence_reference: str,
 ) -> list[Finding]:
-    candidates: list[dict[str, object]] = []
-    for source, output in yara_outputs:
-        candidates.extend(parse_yara_matches(output, source))
-
-    # Keep one structured finding per YARA rule. Match detail is retained when YARA
-    # emits it, but raw evidence strings are deliberately capped by the parser.
     findings: list[Finding] = []
-    seen_rules: set[str] = set()
-    for candidate in candidates:
-        rule_name = str(candidate["rule_name"])
-        safe_indicator = (
-            candidate["matched_indicator"]
-            if rule_name in SAFE_MATCH_VALUE_RULES
-            else None
-        )
-        if rule_name in seen_rules:
-            if safe_indicator is not None:
-                for index, existing in enumerate(findings):
-                    if existing.rule_name == rule_name and existing.matched_indicator is None:
-                        findings[index] = Finding(
-                            **{
-                                **existing.to_dict(),
-                                "matched_indicator": safe_indicator,
-                                "offset": candidate["offset"],
-                            }
-                        )
-                        break
+    seen_rules: dict[str, int] = {}
+
+    for m in scan_matches:
+        rid = str(m.get("rule_id") or m.get("rule_name") or "UNKNOWN")
+        strength = RULE_EVIDENCE_STRENGTH.get(rid, "WEAK")
+        idx = len(findings) + 1
+        if rid in seen_rules:
+            # Corroboration: record against the primary finding for this rule.
+            primary = findings[seen_rules[rid]]
+            findings.append(
+                Finding(
+                    finding_id=f"F-{idx:04d}",
+                    finding_type="YARA_RULE_MATCH",
+                    source=str(m.get("source", "yara")),
+                    rule_id=rid,
+                    rule_name=str(m.get("rule_name")),
+                    matched_indicator=m.get("matched_indicator"),
+                    offset=m.get("offset"),
+                    evidence_strength=strength,
+                    confidence="MEDIUM" if strength != "WEAK" else "LOW",
+                    explanation=f"YARA rule '{rid}' matched the evidence (corroborating occurrence).",
+                    evidence_reference=evidence_reference,
+                    corroborates_finding_id=primary.finding_id,
+                    independent_indicator=False,
+                    correlation_note=f"Corroborates {primary.finding_id} by the same rule.",
+                )
+            )
             continue
-        seen_rules.add(rule_name)
-        severity, confidence = RULE_SEVERITY.get(rule_name, ("LOW", "LOW"))
+        seen_rules[rid] = len(findings)
         findings.append(
             Finding(
-                finding_id="",
+                finding_id=f"F-{idx:04d}",
                 finding_type="YARA_RULE_MATCH",
-                source=str(candidate["source"]),
-                rule_name=rule_name,
-                matched_indicator=safe_indicator,
-                offset=candidate["offset"],
-                severity=severity,
-                confidence=confidence,
-                explanation=f"YARA rule '{rule_name}' matched the evidence.",
+                source=str(m.get("source", "yara")),
+                rule_id=rid,
+                rule_name=str(m.get("rule_name")),
+                matched_indicator=m.get("matched_indicator"),
+                offset=m.get("offset"),
+                evidence_strength=strength,
+                confidence="MEDIUM" if strength != "WEAK" else "LOW",
+                explanation=f"YARA rule '{rid}' matched the evidence.",
                 evidence_reference=evidence_reference,
             )
         )
 
-    lower_strings = strings_output.lower()
+    lower = (string_result.strings if string_result else [])
+    text = "\n".join(lower).lower()
     string_indicators = (
-        ("stratum+tcp", "MINING_PROTOCOL_INDICATOR", "MEDIUM"),
-        ("stratum+ssl", "MINING_PROTOCOL_INDICATOR", "MEDIUM"),
-        ("xmrig", "MINER_NAME_INDICATOR", "MEDIUM"),
+        ("stratum+tcp://", "MINING_PROTOCOL_INDICATOR", "MEDIUM"),
+        ("stratum+ssl://", "MINING_PROTOCOL_INDICATOR", "MEDIUM"),
+        ("xmrig", "MINER_NAME_INDICATOR", "WEAK"),
     )
-    for indicator, finding_type, severity in string_indicators:
-        if indicator in lower_strings:
+    for indicator, ftype, strength in string_indicators:
+        if indicator in text:
+            idx = len(findings) + 1
             findings.append(
                 Finding(
-                    finding_id="",
-                    finding_type=finding_type,
+                    finding_id=f"F-{idx:04d}",
+                    finding_type=ftype,
                     source="strings",
+                    rule_id=None,
                     rule_name=None,
                     matched_indicator=indicator,
                     offset=None,
-                    severity=severity,
+                    evidence_strength=strength,
                     confidence="LOW",
                     explanation=f"Extracted strings contain the indicator '{indicator}'.",
                     evidence_reference=evidence_reference,
                 )
             )
 
-    seen_wallet_candidates: set[str] = set()
-    for wallet_style, pattern in WALLET_CANDIDATE_PATTERNS:
-        for match in pattern.finditer(strings_output):
-            candidate = match.group(0)
-            if candidate in seen_wallet_candidates:
+    seen_wallet: set[str] = set()
+    for _style, pattern in WALLET_PATTERNS:
+        for match in pattern.finditer("\n".join(lower)):
+            cand = match.group(0)
+            if cand in seen_wallet:
                 continue
-            seen_wallet_candidates.add(candidate)
+            seen_wallet.add(cand)
+            idx = len(findings) + 1
             findings.append(
                 Finding(
-                    finding_id="",
+                    finding_id=f"F-{idx:04d}",
                     finding_type="WALLET_CANDIDATE",
                     source="strings",
+                    rule_id=None,
                     rule_name=None,
-                    matched_indicator=candidate,
+                    matched_indicator=cand,
                     offset=None,
-                    severity="LOW",
+                    evidence_strength="WEAK",
                     confidence="LOW",
                     explanation=(
-                        f"Extracted strings contain a {wallet_style} wallet-format "
-                        "candidate; checksum, ownership, and activity were not validated."
+                        "Extracted strings contain a wallet-format candidate; checksum, "
+                        "ownership, and activity were not validated."
                     ),
                     evidence_reference=evidence_reference,
                 )
             )
 
-    with_ids = [
-        replace(finding, finding_id=f"F-{index:04d}")
-        for index, finding in enumerate(findings, start=1)
-    ]
-    return correlate_findings(with_ids)
+    # Deterministic correlation keys (order-independent).
+    return correlate(findings)
 
 
-def _correlation_key(finding: Finding) -> str:
-    indicator = (finding.matched_indicator or "").strip().lower()
-    if indicator == "xmrig":
+def _correlation_key(f: Finding) -> str:
+    ind = (f.matched_indicator or "").strip().lower()
+    if f.finding_type == "WALLET_CANDIDATE" and ind:
+        return f"wallet:{ind}"
+    if ind == "xmrig":
         return "miner-name:xmrig"
-    if indicator.startswith("stratum"):
+    if ind.startswith("stratum"):
         return "protocol:stratum"
-    if finding.finding_type == "WALLET_CANDIDATE" and indicator:
-        return f"wallet-candidate:{indicator}"
-    if indicator:
-        return f"indicator:{indicator}"
-    if finding.rule_name:
-        return f"rule:{finding.rule_name}"
-    return f"finding:{finding.finding_id}"
+    if ind:
+        return f"indicator:{ind}"
+    if f.rule_id:
+        return f"rule:{f.rule_id}"
+    return f"finding:{f.finding_id}"
 
 
-def correlate_findings(findings: list[Finding]) -> list[Finding]:
-    """Group corroborating records without treating them as independent indicators."""
+def correlate(findings: list[Finding]) -> list[Finding]:
     groups: dict[str, tuple[str, str]] = {}
-    correlated: list[Finding] = []
-    for finding in findings:
-        key = _correlation_key(finding)
+    out: list[Finding] = []
+    for f in findings:
+        key = _correlation_key(f)
         existing = groups.get(key)
         if existing is None:
-            group_id = f"G-{len(groups) + 1:04d}"
-            groups[key] = (group_id, finding.finding_id)
-            correlated.append(
-                replace(
-                    finding,
-                    finding_group_id=group_id,
-                    corroborates_finding_id=None,
-                    independent_indicator=True,
-                    correlation_note=(
-                        "Primary record for this correlated indicator group."
-                    ),
-                )
-            )
+            gid = f"G-{len(groups) + 1:04d}"
+            groups[key] = (gid, f.finding_id)
+            out.append(replace(f, finding_group_id=gid, independent_indicator=True,
+                               correlation_note="Primary record for this correlated indicator group."))
             continue
-
-        group_id, primary_id = existing
-        correlated.append(
-            replace(
-                finding,
-                finding_group_id=group_id,
-                corroborates_finding_id=primary_id,
-                independent_indicator=False,
-                correlation_note=(
-                    f"Corroborates {primary_id} through another rule or analysis source."
-                ),
-            )
-        )
-    return correlated
+        gid, primary = existing
+        out.append(replace(f, finding_group_id=gid, corroborates_finding_id=primary,
+                           independent_indicator=False,
+                           correlation_note=f"Corroborates {primary} through another source."))
+    return out
 
 
-def overall_severity(findings: list[Finding]) -> str:
-    rank = {"NONE": 0, "LOW": 1, "MEDIUM": 2, "HIGH": 3, "CRITICAL": 4}
-    return max((finding.severity for finding in findings), key=rank.get, default="NONE")
+def evidence_strength_rank(strength: str) -> int:
+    return {"NONE": 0, "WEAK": 1, "MEDIUM": 2, "STRONG": 3}.get(strength, 0)
+
+
+def overall_evidence_strength(findings: list[Finding]) -> str:
+    if not findings:
+        return "NONE"
+    best = max((f.evidence_strength for f in findings), key=evidence_strength_rank)
+    return best

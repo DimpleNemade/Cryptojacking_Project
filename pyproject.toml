@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cryptojacking-forensics"
+version = "0.1.0a1"
+description = "Offline, evidence-aware cryptojacking indicator-triage CLI with an in-process YARA engine, privacy-aware findings, and reproducible run metadata."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Dimple Nemade" }]
+maintainers = [{ name = "Dimple Nemade" }]
+keywords = ["forensics", "cryptojacking", "triage", "yara", "dfir", "incident-response"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Security",
+    "Topic :: System :: Logging",
+    "Typing :: Typed",
+]
+dependencies = [
+    "yara-python>=4.3,<5",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<9", "coverage>=7,<9", "jsonschema>=4,<5"]
+test = ["pytest>=8,<9", "coverage>=7,<9", "jsonschema>=4,<5"]
+
+[project.urls]
+Homepage = "https://github.com/DimpleNemade/Cryptojacking_Project"
+Repository = "https://github.com/DimpleNemade/Cryptojacking_Project"
+Documentation = "https://github.com/DimpleNemade/Cryptojacking_Project/blob/main/docs"
+Issues = "https://github.com/DimpleNemade/Cryptojacking_Project/issues"
+
+[project.scripts]
+cj-triage = "cryptojacking_forensics.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["cryptojacking_forensics*"]
+
+[tool.setuptools.package-data]
+cryptojacking_forensics = ["rules/*.yar", "schemas/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"
+
+[tool.coverage.run]
+source = ["cryptojacking_forensics"]
+omit = ["tests/*"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100

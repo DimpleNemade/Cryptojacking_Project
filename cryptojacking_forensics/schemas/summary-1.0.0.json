@@ -1,0 +1,25 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/DimpleNemade/Cryptojacking_Project/schemas/summary-1.0.0.json",
+  "title": "cryptojacking-forensics summary",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["schema_version", "case_id", "run_id", "analysis_status", "hash_verification"],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0.0" },
+    "case_id": { "type": "string" },
+    "run_id": { "type": "string" },
+    "analysis_status": { "type": "string", "enum": ["SUCCESS", "PARTIAL", "FAILED", "INTEGRITY_FAILURE"] },
+    "hash_verification": { "type": "string", "enum": ["PASS", "FAIL", "NOT_RUN"] },
+    "input_sha256_before": { "type": ["string", "null"] },
+    "input_sha256_after": { "type": ["string", "null"] },
+    "finding_count": { "type": "integer" },
+    "independent_indicator_count": { "type": "integer" },
+    "evidence_strength": { "type": "string", "enum": ["NONE", "WEAK", "MEDIUM", "STRONG", "UNDETERMINED"] },
+    "explanation": { "type": "string" },
+    "warnings": { "type": "array", "items": { "type": "string" } },
+    "errors": { "type": "array", "items": { "type": "string" } },
+    "unvalidated_triage_score": { "type": ["integer", "null"] },
+    "limitations": { "type": "array", "items": { "type": "string" } }
+  }
+}

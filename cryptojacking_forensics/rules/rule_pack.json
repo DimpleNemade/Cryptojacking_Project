@@ -1,0 +1,50 @@
+{
+  "rule_pack": {
+    "name": "cryptojacking-forensics-alpha",
+    "version": "1.0.0",
+    "schema_version": "1.0.0",
+    "engine": "yara-python",
+    "engine_rule_language": "classic-yara",
+    "author": "Dimple Nemade",
+    "reviewed": "2026-08-09",
+    "scope": "Offline byte scanning of supplied artifacts. Indicators for triage only; not proof of compromise.",
+    "rules": [
+      {
+        "rule_id": "CJ-MINER-001",
+        "file": "cryptojacking_alpha.yar",
+        "name": "cj_miner_xmrig_config_1",
+        "version": "1.0.0",
+        "purpose": "XMRig configuration/options that co-occur with mining setup",
+        "input_type": "artifact",
+        "mitre": "T1496.001",
+        "confidence": "medium",
+        "false_positives": "security blog posts, training material, benign config snippets",
+        "reviewed": "2026-08-09"
+      },
+      {
+        "rule_id": "CJ-NET-001",
+        "file": "cryptojacking_alpha.yar",
+        "name": "cj_stratum_endpoint_1",
+        "version": "1.0.0",
+        "purpose": "Stratum mining-protocol endpoint URI or common mining ports",
+        "input_type": "artifact",
+        "mitre": "T1496.001",
+        "confidence": "medium",
+        "false_positives": "non-mining services using ports 3333/4444/5555; documentation",
+        "reviewed": "2026-08-09"
+      },
+      {
+        "rule_id": "CJ-PROC-001",
+        "file": "cryptojacking_alpha.yar",
+        "name": "cj_miner_name_weak_1",
+        "version": "1.0.0",
+        "purpose": "Known miner process/binary names (weak indicator on its own)",
+        "input_type": "artifact",
+        "mitre": "T1496.001",
+        "confidence": "weak",
+        "false_positives": "mention of miner names in documentation, logs, code comments",
+        "reviewed": "2026-08-09"
+      }
+    ]
+  }
+}
