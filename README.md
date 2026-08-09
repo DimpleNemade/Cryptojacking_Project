@@ -121,6 +121,7 @@ anonymization: low-entropy/common values can be guessed and re-hashed.
 python -m ruff check cryptojacking_forensics tests tasks.py
 python -m pytest --cov=cryptojacking_forensics --cov-fail-under=85
 python -m pre_commit run --all-files
+pip-audit -r requirements-audit.txt --strict
 python -m build
 ```
 

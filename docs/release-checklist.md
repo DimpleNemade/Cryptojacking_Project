@@ -15,7 +15,7 @@
 ## Remote release gates
 
 - [ ] Exact commit passes required Windows/Ubuntu, Python 3.10-3.12 CI jobs.
-- [ ] CodeQL, dependency review, pre-commit, and SBOM workflows pass.
+- [ ] CodeQL, runtime dependency audit, pre-commit, and SBOM workflows pass.
 - [ ] `main` branch protection/ruleset is enabled and tested with a pull request.
 - [ ] Release build produces wheel, sdist, checksums, SBOM, and provenance attestation.
 - [ ] GitHub prerelease is created from `v0.1.0-alpha.2`.

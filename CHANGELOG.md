@@ -28,6 +28,8 @@ applicable, with alpha prereleases using `0.1.0aN`.
 - Versioned `findings.json` as a document rather than an unversioned top-level array.
 - Raised the measured CI coverage gate to 85%.
 - Added required format and static-type checks to the local pre-commit contract.
+- Added a reproducible `pip-audit` runtime dependency gate for repositories where
+  GitHub Dependency Review is unavailable.
 - Corrected README, platform, architecture, release, and validation claims.
 
 ## [0.1.0a1] - 2026-08-09

@@ -6,6 +6,7 @@ include LICENSE
 include NOTICE
 include README.md
 include SECURITY.md
+include requirements-audit.txt
 include tests/conftest.py
 recursive-include docs *.html *.md
 recursive-include tests/fixtures *.txt

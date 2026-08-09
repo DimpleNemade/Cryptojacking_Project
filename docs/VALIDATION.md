@@ -33,6 +33,7 @@ python -m pytest tests/test_schema.py -ra
 python -m cryptojacking_forensics doctor
 python -m cryptojacking_forensics rules check
 python -m pre_commit run --all-files --show-diff-on-failure
+pip-audit -r requirements-audit.txt --strict
 python -m build
 cyclonedx-py environment <clean-python> --output-format JSON --output-file sbom.cdx.json --output-reproducible --validate --pyproject pyproject.toml --mc-type application
 ```
@@ -54,6 +55,8 @@ cj-triage verify-report <generated-manifest>
 - mypy: passed for 21 source/test/task files.
 - Pre-commit hooks: passed, including YAML, size, conflict, secret, lint,
   formatting, typing, and rule-compilation checks.
+- Runtime dependency audit: passed; no known vulnerabilities were reported for
+  the direct runtime requirements or their resolved transitive dependencies.
 - Tests: **46 passed**.
 - Statement coverage: **85.35% overall**; engine 92%, evidence 92%, findings 88%,
   streaming string extraction 94%.
