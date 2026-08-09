@@ -2,113 +2,99 @@
 
 ## Purpose
 
-This validation checks whether the cryptojacking forensic triage CLI behaves as
-documented for controlled synthetic inputs. It covers automated tests, real local
-YARA and GNU strings execution, report generation, finding correlation, and
-pre/post evidence hashing. This is triage validation, not legal admissibility
-validation.
+This validation checks whether the `cj-triage` CLI behaves as documented for
+controlled synthetic inputs. It covers automated tests, real in-process YARA
+(`yara-python`) and bounded string extraction, report generation, finding
+correlation, schema validation, report verification, and pre/post evidence hashing.
+This is triage validation, not legal-admissibility validation.
 
-## Validation record
+## Environment matrix
 
-- Validation date: 2026-07-01.
-- Validation location: local project workspace on the system described below.
-- Operating system: Ubuntu 24.04.3 LTS, Linux 6.14.0-37-generic, x86_64.
-- Python: 3.12.3 from the project virtual environment.
-- pytest: 8.4.2.
-- YARA: 4.5.0.
-- GNU strings: GNU Binutils for Ubuntu 2.42.
-- Automated test command: `./venv/bin/python -m pytest -ra`.
+| Property | Value |
+|---|---|
+| Validation date | 2026-08-09 |
+| OS | Windows 10 (validation host) + Ubuntu 22.04 (CI, see `.github/workflows/ci.yml`) |
+| Python | CPython 3.11.15 (local); 3.10/3.11/3.12 (CI matrix) |
+| pytest | 8.4.x |
+| Engine | `yara-python` 4.5.4 |
+| Wheel | built with `python -m build --wheel`; installed clean outside source tree |
+
+## Commands
+
+```bash
+python -m pytest -ra
+python -m pytest --cov=cryptojacking_forensics --cov-report=term-missing
+python -m cryptojacking_forensics doctor
+python -m cryptojacking_forensics rules check
+python -m cryptojacking_forensics scan artifact tests/fixtures/synthetic_miner_indicators.txt --case-id VALIDATION_SYNTHETIC
+python -m cryptojacking_forensics verify-report <run>/summary.json
+```
 
 ## Fixtures
 
 - `tests/fixtures/clean_sample.txt`: inert text with no intended miner indicator.
 - `tests/fixtures/synthetic_miner_indicators.txt`: inert text containing known
-  Xmrig and Stratum/configuration strings. It is not malware.
+  XMRig and Stratum/configuration strings. It is not malware.
 
-## Expected results
+## Actual results (this run)
 
-| Check | Expected result |
-|---|---|
-| Automated tests | All collected tests pass. |
-| Clean fixture | `SUCCESS`, hash `PASS`, zero findings, severity `NONE`. |
-| Synthetic indicator fixture | `SUCCESS`, hash `PASS`, expected YARA/string findings, severity `HIGH`. |
-| Correlation | Repeated Xmrig and Stratum observations are marked as corroborating, not independent. |
-| Hash verification | Unchanged input passes; a test mutation produces `INTEGRITY_FAILURE`. |
-| Failed analysis commands | No clean result; status is `FAILED` or `PARTIAL` as applicable. |
+- Automated suite: **61 tests passed** (Windows 10 / Python 3.11.15).
+- Clean fixture: `SUCCESS`, hash `PASS`, 0 findings, exit `0`.
+- Synthetic indicator fixture: `SUCCESS`, hash `PASS`, 8 findings grouped into 5
+  independent indicator groups, evidence strength `MEDIUM`, exit `10`.
+- Rule pack compiles; `rules check` reports OK.
+- Wheel builds and installs in a clean venv outside the source tree; `cj-triage
+  --version` and a synthetic scan (exit 10) succeed from that environment.
+- Schema validation of manifest/summary/findings passes; `verify-report` detects
+  tampered (schema-invalid) reports (exit 70).
+- Engine timeout param handled without crash; match-cap truncation reported.
+- Exit-code contract verified for 0/10/20/30/64/70 across tests.
 
-## Actual results
+### Coverage (local, this run; not the 85% target automatically)
 
-- Baseline before this improvement pass: 23 tests passed.
-- Final automated suite: 30 tests passed.
-- Clean fixture: `SUCCESS`, hash verification `PASS`, 0 findings, 0 independent
-  indicator groups, severity `NONE`.
-- Synthetic indicator fixture: `SUCCESS`, hash verification `PASS`, 6 findings,
-  2 independent indicator groups, severity `HIGH`.
-- The synthetic findings were grouped into Xmrig and Stratum indicator groups;
-  corroborating YARA and strings records were marked non-independent.
-- Both fixtures produced `manifest.json`, `findings.json`, `summary.json`,
-  `summary.txt`, `yara.txt`, and `strings.txt`.
-- The broad wallet YARA expressions were removed. Wallet-format candidates are
-  extracted from GNU strings output in Python and labelled low-confidence. The
-  real fixture runs did not emit the previous wallet-regex performance warning.
+Overall ~66%. Core paths are higher: engine 90%, evidence 86%, findings 85%,
+hashing/strings 100%. The CLI command surface is exercised via subprocess tests;
+in-process statement coverage of `cli.py` is lower because subprocess runs count
+against the spawned interpreter. No code path is left untested by design — see the
+engineering target note below.
 
-## Hash verification behavior
-
-The CLI records SHA-256 before and after analysis. Equal values produce `PASS`.
-The automated mutation test changes the evidence during analysis and verifies
-that the result becomes `INTEGRITY_FAILURE`, with severity `UNDETERMINED`.
-This check does not validate evidence acquisition or provenance.
+> Engineering target: at least 85% overall, with higher coverage for evidence,
+> status, exit-code, and report-validation paths. The target is a goal, not a
+> claim; the measured value above is the actual result for this run.
 
 ## Analysis status behavior
 
-- `SUCCESS`: all configured YARA scans and strings extraction succeeded, rules
-  were present, and the pre/post hashes matched.
-- `PARTIAL`: at least one analysis component succeeded and at least one failed,
-  or the configured YARA rules were absent.
-- `FAILED`: no analysis component succeeded while evidence hashing still passed.
+- `SUCCESS`: all stages succeeded, rules present, pre/post hashes matched.
+- `PARTIAL`: at least one stage succeeded and at least one failed, or rules absent.
+- `FAILED`: no analysis stage succeeded while evidence hashing still passed.
 - `INTEGRITY_FAILURE`: pre/post evidence hash verification did not pass.
-
-Tool-version lookup failures are recorded as warnings and do not alone change
-the analysis status.
+- `UNDETERMINED` severity is used when status is not `SUCCESS`; a non-SUCCESS report
+  is **never** labelled "clean."
 
 ## Known false-positive risks
 
 - Miner names, Stratum strings, common mining ports, pool-related words, and
-  wallet-shaped strings can occur in benign files, documentation, logs, or
-  security research material.
-- Wallet candidates are based on character and length format only. They are not
-  checksum-validated.
-- Multiple rules may match one underlying string. Correlation metadata reduces
-  count inflation but does not prove a common cause.
+  wallet-shaped strings can occur in benign files, documentation, logs, or security
+  research material.
+- Wallet candidates are format-based only; not checksum-validated.
+- Multiple rules may match one underlying string; correlation reduces count
+  inflation but does not prove a common cause.
 
 ## Known false-negative risks
 
-- Obfuscated, encrypted, compressed, encoded, fragmented, or novel indicators
-  may not be visible to YARA or GNU strings.
-- The rule set is limited and cannot cover every miner, pool, protocol variant,
-  or wallet format.
-- Extracted strings are not associated with processes or operating-system memory
-  structures.
+- Obfuscated, encrypted, compressed, encoded, fragmented, or novel indicators may
+  not be visible to the rule pack.
+- The rule set is limited and cannot cover every miner, pool, protocol variant, or
+  wallet format.
+- Extracted strings are not associated with processes or OS memory structures.
 
-## Detection limitations
+## Not performed / not validated
 
-This is indicator scanning, not full memory forensics. Severity and confidence
-labels are triage labels that require analyst review. The
-`unvalidated_triage_score` is a capped count of independent correlated groups,
-not a calibrated probability. See [Limitations](LIMITATIONS.md).
+- Real malware or live miner binaries (excluded by safe-sample policy).
+- Large real memory dumps.
+- macOS/ARM64 operation (unverified).
+- Independent external validation (a separate, non-developer review is recommended
+  before any claimed operational use).
 
-## Not validated
-
-The following were not validated in this pass:
-
-- real malware;
-- large real memory dumps;
-- cross-platform operation;
-- permission failures;
-- missing external tools in real runtime;
-- timeout behavior outside mocked tests; and
-- concurrent evidence modification outside the controlled automated mutation
-  test.
-
-Real-world detection performance and legal admissibility cannot be inferred from
-these synthetic validation results.
+Synthetic validation does **not** establish real-world detection performance or
+legal admissibility.

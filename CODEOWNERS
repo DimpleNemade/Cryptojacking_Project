@@ -1,0 +1,7 @@
+# Code Owners
+
+# This file uses GitHub's CODEOWNERS syntax. Only confirmed repository identities
+# are listed. During the solo alpha phase the maintainer owns all paths.
+# When contributors join, add their confirmed GitHub handles here.
+
+* @DimpleNemade

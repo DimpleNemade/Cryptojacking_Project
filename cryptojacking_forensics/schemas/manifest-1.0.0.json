@@ -1,0 +1,87 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/DimpleNemade/Cryptojacking_Project/schemas/manifest-1.0.0.json",
+  "title": "cryptojacking-forensics manifest",
+  "version": "1.0.0",
+  "type": "object",
+  "required": ["schema_version", "tool", "case_id", "run_id", "analysis_status", "evidence", "engine", "rule_pack", "limits", "stages", "outputs", "limitations"],
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0.0" },
+    "tool": {
+      "type": "object",
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" }
+      }
+    },
+    "case_id": { "type": "string" },
+    "run_id": { "type": "string" },
+    "started_at": { "type": "string" },
+    "finished_at": { "type": "string" },
+    "analysis_status": { "type": "string", "enum": ["SUCCESS", "PARTIAL", "FAILED", "INTEGRITY_FAILURE"] },
+    "evidence": {
+      "type": "object",
+      "required": ["input_file_display", "sha256_before", "hash_verification"],
+      "properties": {
+        "input_file": { "type": ["string", "null"] },
+        "input_file_display": { "type": "string" },
+        "size": { "type": ["integer", "null"] },
+        "sha256_before": { "type": ["string", "null"] },
+        "sha256_after": { "type": ["string", "null"] },
+        "hash_verification": { "type": "string", "enum": ["PASS", "FAIL", "NOT_RUN"] },
+        "opened_read_only": { "type": "boolean" },
+        "accessed_at": { "type": ["string", "null"] },
+        "observed_controls": { "type": "array", "items": { "type": "string" } },
+        "control_limitations": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "engine": {
+      "type": "object",
+      "required": ["name", "version"],
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "package": { "type": ["string", "null"] }
+      }
+    },
+    "rule_pack": {
+      "type": "object",
+      "required": ["name", "version", "digest"],
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "digest": { "type": "string" },
+        "rule_count": { "type": "integer" }
+      }
+    },
+    "limits": {
+      "type": "object",
+      "properties": {
+        "total_timeout_seconds": { "type": ["number", "null"] },
+        "max_input_bytes": { "type": ["integer", "null"] },
+        "max_matches": { "type": ["integer", "null"] },
+        "max_output_bytes": { "type": ["integer", "null"] }
+      }
+    },
+    "stages": {
+      "type": "object",
+      "properties": {
+        "scan": { "type": "string", "enum": ["SUCCESS", "PARTIAL", "FAILED", "SKIPPED"] },
+        "strings": { "type": "string", "enum": ["SUCCESS", "PARTIAL", "FAILED", "SKIPPED"] }
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "properties": {
+        "report_dir": { "type": ["string", "null"] },
+        "privacy_mode": { "type": "string", "enum": ["safe", "raw-opt-in"] },
+        "artifact_hashes": { "type": "array", "items": { "type": "object" } }
+      }
+    },
+    "warnings": { "type": "array", "items": { "type": "string" } },
+    "errors": { "type": "array", "items": { "type": "string" } },
+    "truncation": { "type": "object" },
+    "limitations": { "type": "array", "items": { "type": "string" } }
+  }
+}

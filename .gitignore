@@ -1,14 +1,77 @@
+# Virtual environments and tooling caches
 venv/
+.venv/
+.clean_verify/
 forensic_venv/
 forensics_venv/
 __pycache__/
 *.pyc
-Reports/
-Logs/
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+.tox/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+*.whl
+*.tar.gz
+
+# Unsafe / sensitive artifacts: never recommit
+# --- Malware, miners, and dual-use binaries ---
+Miner_Samples/xmrig-6.21.0/xmrig
+Miner_Samples/xmrig-6.21.0-linux-static-x64.tar.gz.1
+Miner_Samples/xmrig-6.21.0/SHA256SUMS
+Miner_Samples/xmrig-6.21.0/config.json
+*.exe
+*.dll
+*.so
 *.bin
+xmrig
+xmr-stak*
+xmrig-*
+
+# --- Evidence, memory images, and case data ---
 *.raw
 *.vmem
 *.vdi
+*.vmdk
+*.mem
+*.dump
+*.evtx
+*.pcap
+*.hive
+evidence/
+case_data/
+Reports/
+Logs/
+cases/
+
+# --- Archives and large unrelated files ---
 *.zip
+*.tar
 *.tar.gz
-*.DS_Store
+*.tgz
+*.7z
+*.rar
+
+# --- Editor / OS noise ---
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# --- Invalid Windows path artifact (intentionally blocked) ---
+...
+
+# --- CI / local secrets ---
+.env
+*.key
+*.pem
+secrets.*

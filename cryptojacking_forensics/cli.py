@@ -1,265 +1,405 @@
+"""cryptojacking-forensics CLI.
+
+Stable automation contract (see docs/project-roadmap.html and AGENTS.md):
+  0  completed successfully, no findings
+  10 completed successfully, findings present
+  20 incomplete or partial analysis
+  30 evidence integrity failure
+  64 command usage or configuration error
+  70 internal or unrecoverable execution failure
+
+Privacy defaults: raw evidence strings and absolute paths are NOT written unless
+the operator explicitly opts in with --raw. Machine-readable output goes to stdout
+only when --format json is requested; progress/diagnostics go to stderr.
+"""
+
 from __future__ import annotations
 
 import argparse
-import platform
+import json
 import sys
+from datetime import datetime, timezone
 from pathlib import Path
+from typing import Any
 
 from .case import create_case_run, validate_case_id
-from .commands import CommandResult, run_command, summarize_stderr, utc_now
-from .evidence import inspect_after, inspect_before
-from .errors import TriageError
-from .findings import LIMITATION, build_findings, overall_severity
-from .hashing import sha256_file
-from .manifest import write_json
-from .reporting import write_summary_json, write_summary_text
+from .engine import ENGINE_NAME, ENGINE_VERSION, ScanError, compile_rules, rule_file_hashes, scan_bytes
+from .evidence import inspect_after, inspect_before, write_access_advisory
+from .findings import LIMITATION as LIMITATION_TEXT, build_findings
+from .reporting import atomic_write_json, validate_document
+from .reporting_ext import build_summary, write_summary, SummaryInput
+from .manifest import build_manifest, output_hashes, write_manifest, ManifestInput
 from .strings_extractor import extract_strings
-from .yara_scanner import scan_with_yara
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_REPORTS_ROOT = PROJECT_ROOT / "Reports"
-DEFAULT_RULES_ROOT = PROJECT_ROOT / "YARA_Rules"
+DEFAULT_RULES_DIR = Path(__file__).resolve().parent / "rules"
+DEFAULT_LIMITS = {
+    "total_timeout_seconds": 120,
+    "max_input_bytes": 200_000_000,
+    "max_matches": 5_000,
+    "max_output_bytes": 2_000_000,
+}
 
-
-def _tool_version(
-    command: list[str], timeout_seconds: float = 5
-) -> tuple[str, CommandResult]:
-    result = run_command(command, timeout_seconds)
-    if not result.succeeded:
-        version = f"UNAVAILABLE ({summarize_stderr(result.stderr) or 'non-zero exit'})"
-        return version, result
-    lines = (result.stdout or result.stderr).strip().splitlines()
-    return (lines[0] if lines else "UNKNOWN"), result
-
-
-def _analysis_status(
-    results: list[CommandResult], hash_verification: str, *, incomplete: bool = False
-) -> str:
-    if hash_verification != "PASS":
-        return "INTEGRITY_FAILURE"
-    successes = sum(result.succeeded for result in results)
-    if successes == len(results) and not incomplete:
-        return "SUCCESS"
-    return "PARTIAL" if successes else "FAILED"
+EXIT_OK_NO_FINDINGS = 0
+EXIT_OK_FINDINGS = 10
+EXIT_PARTIAL = 20
+EXIT_INTEGRITY = 30
+EXIT_USAGE = 64
+EXIT_INTERNAL = 70
 
 
-def _score(independent_indicator_count: int) -> int:
-    # Retained only for continuity with the prototype; it is not validated.
-    return min(independent_indicator_count, 10)
+def _utcnow() -> str:
+    return datetime.now(timezone.utc).isoformat()
 
 
-def run_pipeline(
-    memory_path: Path,
-    case_id: str,
-    *,
-    reports_root: Path = DEFAULT_REPORTS_ROOT,
-    rules_root: Path = DEFAULT_RULES_ROOT,
-    timeout_seconds: float = 120,
-) -> Path:
-    started_at = utc_now()
-    validate_case_id(case_id)
-    evidence = inspect_before(memory_path)
-    case_run = create_case_run(reports_root, case_id)
+def _get_version() -> str:
+    try:
+        from importlib.metadata import version as _v
+
+        return _v("cryptojacking-forensics")
+    except Exception:
+        return "0.1.0a1"
+
+
+def _resolve_rule_files(rules_dir: Path) -> list[Path]:
+    if not rules_dir.exists():
+        return []
+    return sorted(rules_dir.glob("*.yar"))
+
+
+def _budget_ms(per_stage_seconds: float) -> int:
+    return max(100, int(per_stage_seconds * 1000))
+
+
+def _exit_for_status(analysis_status: str, hash_verification: str, has_findings: bool) -> int:
+    if hash_verification == "FAIL":
+        return EXIT_INTEGRITY
+    if analysis_status == "INTEGRITY_FAILURE":
+        return EXIT_INTEGRITY
+    if analysis_status == "FAILED":
+        return EXIT_PARTIAL
+    if analysis_status == "PARTIAL":
+        return EXIT_PARTIAL
+    # SUCCESS
+    return EXIT_OK_FINDINGS if has_findings else EXIT_OK_NO_FINDINGS
+
+
+def cmd_scan(args: argparse.Namespace) -> int:
+    try:
+        validate_case_id(args.case_id)
+        evidence = inspect_before(Path(args.input))
+    except (ValueError, OSError) as exc:
+        print(f"ERROR: {exc}", file=sys.stderr)
+        return EXIT_USAGE
+
     warnings: list[str] = []
     errors: list[str] = []
 
-    rule_files = sorted(rules_root.resolve().glob("*.yar"))
-    rule_file_records = [
-        {
-            "path": str(path),
-            "display_path": path.name,
-            "sha256": sha256_file(path),
-        }
-        for path in rule_files
-    ]
+    if evidence.size is not None and evidence.size > DEFAULT_LIMITS["max_input_bytes"]:
+        errors.append(f"input exceeds max_input_bytes ({DEFAULT_LIMITS['max_input_bytes']})")
+        return EXIT_PARTIAL
+
+    rule_files = _resolve_rule_files(Path(args.rules) if args.rules else DEFAULT_RULES_DIR)
     if not rule_files:
-        warnings.append(f"No YARA rule files found under {rules_root.resolve()}")
+        warnings.append("no YARA rule files found; scanning with string indicators only")
 
-    yara_results = scan_with_yara(evidence.path, rule_files, timeout_seconds)
-    strings_result = extract_strings(evidence.path, timeout_seconds)
-    command_results = [result for _, result in yara_results] + [strings_result]
+    try:
+        data = evidence.path.read_bytes()
+    except OSError as exc:
+        errors.append(f"could not read input: {exc}")
+        return EXIT_PARTIAL
 
-    for result in command_results:
-        if not result.succeeded:
-            errors.append(
-                f"Command failed (return code {result.return_code}): "
-                f"{' '.join(result.command)}; {summarize_stderr(result.stderr)}"
+    stages: dict[str, str] = {}
+    findings_input: list[dict[str, Any]] = []
+
+    scan_status = "SUCCESS"
+    try:
+        rules = compile_rules(rule_files)
+        result = scan_bytes(
+            rules,
+            data,
+            timeout_ms=_budget_ms(args.timeout),
+            max_matches=DEFAULT_LIMITS["max_matches"],
+        )
+        scan_status = result.status
+        for m in result.matches:
+            findings_input.append(
+                {
+                    "rule_id": m.rule_id,
+                    "rule_name": m.rule_name,
+                    "source": "yara",
+                    "matched_indicator": m.matched_value,
+                    "offset": m.offset,
+                }
             )
-        elif result.stderr.strip():
-            warnings.append(
-                f"Command warning ({' '.join(result.command)}): "
-                f"{summarize_stderr(result.stderr)}"
-            )
+        if result.error:
+            errors.append(result.error)
+        if result.truncated:
+            warnings.append("scan match limit reached; results truncated")
+    except ScanError as exc:
+        scan_status = "FAILED"
+        errors.append(str(exc))
+
+    strings_result = extract_strings(
+        data,
+        min_length=args.min_length,
+        max_strings=DEFAULT_LIMITS["max_matches"],
+        max_bytes=DEFAULT_LIMITS["max_output_bytes"],
+    )
+    strings_status = "PARTIAL" if strings_result.truncated else "SUCCESS"
+
+    stages["scan"] = scan_status
+    stages["strings"] = strings_status
 
     try:
         inspect_after(evidence)
+        write_access_advisory(evidence)
     except OSError as exc:
         evidence.hash_verification = "FAIL"
-        errors.append(f"Post-analysis evidence hashing failed: {exc}")
-    if evidence.hash_verification != "PASS" and evidence.sha256_after is not None:
-        errors.append("Evidence SHA-256 changed between pre-analysis and post-analysis hashing")
+        errors.append(f"post-analysis evidence hashing failed: {exc}")
 
-    analysis_status = _analysis_status(
-        command_results,
-        evidence.hash_verification,
-        incomplete=not rule_files,
+    if evidence.hash_verification == "FAIL" and evidence.sha256_after is not None:
+        errors.append("evidence SHA-256 changed between pre/post hashing")
+
+    if evidence.hash_verification == "FAIL":
+        analysis_status = "INTEGRITY_FAILURE"
+    elif scan_status == "FAILED":
+        analysis_status = "FAILED"
+    elif scan_status == "PARTIAL" or strings_status == "PARTIAL" or (not rule_files):
+        analysis_status = "PARTIAL"
+    else:
+        analysis_status = "SUCCESS"
+
+    findings = build_findings(findings_input, strings_result, evidence.path.name)
+
+    case_run = create_case_run(Path(args.output), args.case_id)
+    run_dir = case_run.run_dir
+
+    pack_digest, _rule_records = rule_file_hashes(rule_files)
+    summary = build_summary(
+        SummaryInput(
+            case_id=args.case_id,
+            run_id=case_run.run_id,
+            analysis_status=analysis_status,
+            hash_verification=evidence.hash_verification,
+            input_sha256_before=evidence.sha256_before,
+            input_sha256_after=evidence.sha256_after,
+            findings=findings,
+            warnings=warnings,
+            errors=errors,
+            limitations=[LIMITATION_TEXT],
+            unvalidated_triage_score=(
+                sum(1 for f in findings if f.independent_indicator) if analysis_status == "SUCCESS" else None
+            ),
+        )
     )
-    successful_yara_outputs = [
-        (str(rule_file), result.stdout)
-        for rule_file, result in yara_results
-        if result.succeeded
-    ]
-    findings = build_findings(
-        successful_yara_outputs,
-        strings_result.stdout if strings_result.succeeded else "",
-        str(evidence.path),
+
+    findings_doc = [f.to_dict() for f in findings]
+    manifest = build_manifest(
+        ManifestInput(
+            case_id=args.case_id,
+            run_id=case_run.run_id,
+            started_at=_utcnow(),
+            finished_at=_utcnow(),
+            analysis_status=analysis_status,
+            evidence={
+                "input_file": (str(evidence.path) if args.raw else None),
+                "input_file_display": evidence.display_name,
+                "size": evidence.size,
+                "sha256_before": evidence.sha256_before,
+                "sha256_after": evidence.sha256_after,
+                "hash_verification": evidence.hash_verification,
+                "opened_read_only": evidence.opened_read_only,
+                "accessed_at": evidence.accessed_at,
+                "observed_controls": evidence.observed_controls,
+                "control_limitations": evidence.control_limitations,
+                "external_modification": evidence.external_modification,
+            },
+            engine={"name": ENGINE_NAME, "version": ENGINE_VERSION, "package": "yara-python"},
+            rule_pack={"name": "cryptojacking-forensics-alpha", "version": "1.0.0", "digest": pack_digest, "rule_count": len(rule_files)},
+            limits=DEFAULT_LIMITS,
+            stages=stages,
+            warnings=warnings,
+            errors=errors,
+            truncation={"scan_truncated": scan_status == "PARTIAL", "strings_truncated": strings_result.truncated},
+            outputs={"report_dir": str(run_dir), "privacy_mode": ("raw-opt-in" if args.raw else "safe")},
+            limitations=[LIMITATION_TEXT],
+        )
     )
 
-    yara_version, yara_version_result = _tool_version(["yara", "--version"])
-    strings_version, strings_version_result = _tool_version(["strings", "--version"])
-    version_results = [yara_version_result, strings_version_result]
-    for result in version_results:
-        if not result.succeeded:
-            warnings.append(
-                f"Could not determine tool version ({' '.join(result.command)}): "
-                f"{summarize_stderr(result.stderr)}"
-            )
+    findings_path = run_dir / "findings.json"
+    summary_path = run_dir / "summary.json"
+    manifest_path = run_dir / "manifest.json"
+    strings_path = run_dir / "strings.txt"
 
-    yara_output_path = case_run.run_dir / "yara.txt"
-    strings_output_path = case_run.run_dir / "strings.txt"
-    findings_path = case_run.run_dir / "findings.json"
-    summary_json_path = case_run.run_dir / "summary.json"
-    summary_text_path = case_run.run_dir / "summary.txt"
-    manifest_path = case_run.run_dir / "manifest.json"
+    atomic_write_json(findings_path, findings_doc)
+    write_summary(summary_path, summary)
+    write_manifest(manifest_path, manifest)
+    if args.raw:
+        strings_path.write_text("\n".join(strings_result.strings), encoding="utf-8")
 
-    yara_output_path.write_text(
-        "\n".join(
-            f"# RULE_FILE={rule_file}\n{result.stdout}"
-            for rule_file, result in yara_results
-        ),
-        encoding="utf-8",
-    )
-    strings_output_path.write_text(strings_result.stdout, encoding="utf-8")
-    write_json(findings_path, [finding.to_dict() for finding in findings])
+    artifact_hashes = output_hashes([findings_path, summary_path, manifest_path])
+    manifest["outputs"]["artifact_hashes"] = artifact_hashes
+    write_manifest(manifest_path, manifest)
 
-    severity = overall_severity(findings) if analysis_status == "SUCCESS" else "UNDETERMINED"
-    independent_indicator_count = sum(
-        finding.independent_indicator for finding in findings
-    )
-    summary = {
-        "case_id": case_run.case_id,
-        "run_id": case_run.run_id,
-        "analysis_status": analysis_status,
-        "hash_verification": evidence.hash_verification,
-        "input_sha256_before": evidence.sha256_before,
-        "input_sha256_after": evidence.sha256_after,
-        "finding_count": len(findings),
-        "independent_indicator_count": independent_indicator_count,
-        "risk_severity": severity,
-        "unvalidated_triage_score": (
-            _score(independent_indicator_count)
-            if analysis_status == "SUCCESS"
-            else None
-        ),
-        "explanation": (
-            "Analysis incomplete; absence of findings must not be interpreted as clean."
-            if analysis_status != "SUCCESS"
-            else (
-                f"{len(findings)} triage findings were grouped into "
-                f"{independent_indicator_count} independent indicator groups; "
-                "review findings.json."
-                if findings
-                else "No miner indicators were found by the completed triage analyses."
-            )
-        ),
-        "warnings": warnings,
-        "errors": errors,
-        "limitations": LIMITATION,
-    }
-    write_summary_json(summary_json_path, summary)
-    write_summary_text(summary_text_path, summary)
+    if args.format == "json":
+        payload = {"summary": summary, "findings": findings_doc, "report_dir": str(run_dir)}
+        print(json.dumps(payload, indent=2, sort_keys=True))
 
-    output_paths = [
-        yara_output_path,
-        strings_output_path,
-        findings_path,
-        summary_json_path,
-        summary_text_path,
-    ]
-    recorded_commands = command_results + version_results
-    finished_at = utc_now()
-    manifest = {
-        "case_id": case_run.case_id,
-        "run_id": case_run.run_id,
-        "started_at": started_at,
-        "finished_at": finished_at,
-        "analysis_status": analysis_status,
-        "input_file": str(evidence.path),
-        "input_file_display": evidence.path.name,
-        "input_file_size": evidence.size,
-        "input_sha256_before": evidence.sha256_before,
-        "input_sha256_after": evidence.sha256_after,
-        "hash_verification": evidence.hash_verification,
-        "commands_executed": [result.manifest_record() for result in recorded_commands],
-        "command_return_codes": [result.return_code for result in recorded_commands],
-        "stderr_summaries": [
-            summarize_stderr(result.stderr) for result in recorded_commands if result.stderr
-        ],
-        "tool_versions": {
-            "python": platform.python_version(),
-            "yara": yara_version,
-            "strings": strings_version,
-            "hashing": "Python hashlib.sha256",
-        },
-        "yara_rule_files": rule_file_records,
-        "output_files": [
-            {
-                "path": str(path),
-                "display_path": str(path.relative_to(case_run.reports_root)),
-                "sha256": sha256_file(path),
-            }
-            for path in output_paths
-        ],
-        "path_disclosure_notice": (
-            "Traceability fields and recorded commands may contain absolute local paths. "
-            "Use display_path or input_file_display when workstation layout should not "
-            "be disclosed."
-        ),
-        "warnings": warnings,
-        "errors": errors,
-        "limitations": LIMITATION,
-    }
-    write_json(manifest_path, manifest)
-    return case_run.run_dir
+    print(f"Analysis complete: {run_dir} (status={analysis_status})", file=sys.stderr)
+    return _exit_for_status(analysis_status, evidence.hash_verification, bool(findings))
+
+
+def cmd_doctor(args: argparse.Namespace) -> int:
+    checks: dict[str, Any] = {"tool": {"name": "cryptojacking-forensics", "version": _get_version()}}
+    checks["engine"] = {"name": ENGINE_NAME, "version": ENGINE_VERSION, "package": "yara-python"}
+    rule_files = _resolve_rule_files(DEFAULT_RULES_DIR)
+    checks["rule_pack"] = {"version": "1.0.0", "rule_count": len(rule_files), "rules": [p.name for p in rule_files]}
+    checks["schema_versions"] = {"manifest": "1.0.0", "summary": "1.0.0", "findings": "1.0.0"}
+    checks["platform"] = sys.platform
+    checks["python"] = sys.version.split()[0]
+    if args.format == "json":
+        print(json.dumps(checks, indent=2, sort_keys=True))
+    else:
+        for k, v in checks.items():
+            print(f"{k}: {json.dumps(v)}", file=sys.stderr)
+        print("doctor: OK", file=sys.stderr)
+    return EXIT_OK_NO_FINDINGS
+
+
+def cmd_rules_check(args: argparse.Namespace) -> int:
+    rules_dir = Path(args.rules) if args.rules else DEFAULT_RULES_DIR
+    rule_files = _resolve_rule_files(rules_dir)
+    ok = True
+    report: dict[str, Any] = {"rules_dir": str(rules_dir), "rules": []}
+    if not rule_files:
+        ok = False
+        report["error"] = "no .yar files found"
+    for rf in rule_files:
+        entry = {"name": rf.name}
+        try:
+            compile_rules([rf])
+            entry["compiles"] = True
+        except ScanError as exc:
+            ok = False
+            entry["compiles"] = False
+            entry["error"] = str(exc)
+        report["rules"].append(entry)
+    if args.format == "json":
+        print(json.dumps(report, indent=2, sort_keys=True))
+    else:
+        for r in report["rules"]:
+            status = "OK" if r.get("compiles") else "FAIL"
+            print(f"  {r['name']}: {status}", file=sys.stderr)
+        print("rules check: " + ("OK" if ok else "FAILED"), file=sys.stderr)
+    return EXIT_OK_NO_FINDINGS if ok else EXIT_USAGE
+
+
+def cmd_verify_report(args: argparse.Namespace) -> int:
+    target = Path(args.report)
+    if not target.exists():
+        print(f"ERROR: file not found: {target}", file=sys.stderr)
+        return EXIT_USAGE
+    try:
+        doc = json.loads(target.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        print(f"ERROR: invalid JSON: {exc}", file=sys.stderr)
+        return EXIT_USAGE
+
+    kind = None
+    if isinstance(doc, list):
+        kind = "findings"
+    elif isinstance(doc, dict):
+        if "analysis_status" in doc and "evidence" in doc:
+            kind = "manifest"
+        elif "evidence_strength" in doc and "analysis_status" in doc:
+            kind = "summary"
+        elif "schema_version" in doc and "analysis_status" in doc:
+            kind = "manifest"
+        elif "schema_version" in doc and "evidence_strength" in doc:
+            kind = "summary"
+    if kind is None:
+        print("ERROR: unrecognized report document", file=sys.stderr)
+        return EXIT_USAGE
+
+    ok, errs = validate_document(kind, doc)
+    if ok:
+        print(f"verify-report: {kind} VALID", file=sys.stderr)
+        if args.format == "json":
+            print(json.dumps({"kind": kind, "valid": True}, indent=2))
+        return EXIT_OK_NO_FINDINGS
+
+    print(f"verify-report: {kind} INVALID", file=sys.stderr)
+    for e in errs:
+        print(f"  - {e}", file=sys.stderr)
+    if args.format == "json":
+        print(json.dumps({"kind": kind, "valid": False, "errors": errs}, indent=2))
+    return EXIT_INTERNAL
+
+
+def _cmd_version(args: argparse.Namespace) -> int:
+    print(_get_version())
+    return EXIT_OK_NO_FINDINGS
 
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Cryptojacking indicator triage over a captured evidence file."
+        prog="cj-triage",
+        description="Offline, evidence-aware cryptojacking indicator-triage CLI.",
     )
-    parser.add_argument("-m", "--memory", required=True, type=Path, help="Evidence file")
-    parser.add_argument("-c", "--case-id", required=True, help="Safe case identifier")
-    parser.add_argument(
-        "--timeout",
-        type=float,
-        default=120,
-        help="Per-command timeout in seconds (default: 120)",
-    )
+    parser.add_argument("--version", action="version", version=f"cryptojacking-forensics {_get_version()}")
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    p_scan = sub.add_parser("scan", help="scan a supplied artifact")
+    p_scan.add_argument("target_type", choices=["artifact"], help="artifact type (byte scan)")
+    p_scan.add_argument("input", help="path to the evidence/artifact file")
+    p_scan.add_argument("--case-id", required=True)
+    p_scan.add_argument("--output", default="Reports")
+    p_scan.add_argument("--rules", default=None)
+    p_scan.add_argument("--timeout", type=float, default=120.0)
+    p_scan.add_argument("--min-length", type=int, default=4)
+    p_scan.add_argument("--format", choices=["human", "json"], default="human")
+    p_scan.add_argument("--raw", action="store_true", help="opt-in to raw strings/absolute paths")
+    p_scan.add_argument("--quiet", action="store_true")
+    p_scan.set_defaults(func=cmd_scan)
+
+    p_doc = sub.add_parser("doctor", help="report environment and versions")
+    p_doc.add_argument("--format", choices=["human", "json"], default="human")
+    p_doc.set_defaults(func=cmd_doctor)
+
+    p_rules = sub.add_parser("rules", help="rule-pack operations")
+    p_rules_sub = p_rules.add_subparsers(dest="rules_command", required=True)
+    p_rc = p_rules_sub.add_parser("check", help="compile-check the rule pack")
+    p_rc.add_argument("--rules", default=None)
+    p_rc.add_argument("--format", choices=["human", "json"], default="human")
+    p_rc.set_defaults(func=cmd_rules_check)
+
+    p_verify = sub.add_parser("verify-report", help="validate a report against its schema")
+    p_verify.add_argument("report")
+    p_verify.add_argument("--format", choices=["human", "json"], default="human")
+    p_verify.set_defaults(func=cmd_verify_report)
+
+    p_ver = sub.add_parser("version", help="print version")
+    p_ver.set_defaults(func=_cmd_version)
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
-    args = build_parser().parse_args(argv)
-    if args.timeout <= 0:
-        print("ERROR: --timeout must be greater than zero", file=sys.stderr)
-        return 2
+    parser = build_parser()
     try:
-        run_dir = run_pipeline(args.memory, args.case_id, timeout_seconds=args.timeout)
-    except (TriageError, OSError, ValueError) as exc:
-        print(f"ERROR: {exc}", file=sys.stderr)
-        return 1
-    print(f"Analysis complete: {run_dir}")
-    return 0
+        args = parser.parse_args(argv)
+    except SystemExit as exc:
+        # argparse --help/--version call sys.exit(0); propagate cleanly.
+        if exc.code in (0, None):
+            raise
+        return EXIT_USAGE
+    try:
+        return int(args.func(args) or 0)
+    except KeyboardInterrupt:  # pragma: no cover
+        print("interrupted", file=sys.stderr)
+        return EXIT_INTERNAL
+    except Exception as exc:  # pragma: no cover
+        print(f"ERROR: internal failure: {exc}", file=sys.stderr)
+        return EXIT_INTERNAL
 
 
 if __name__ == "__main__":

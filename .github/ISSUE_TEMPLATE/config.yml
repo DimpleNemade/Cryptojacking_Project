@@ -1,0 +1,10 @@
+name: Choose an issue type
+description: Pick the right template
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        - **Bug report**: a defect in existing behavior.
+        - **Feature request**: a new capability within the offline triage scope.
+        - **Security report**: use the repository Security tab (private advisory), not an issue.

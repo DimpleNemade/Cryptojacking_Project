@@ -1,154 +1,184 @@
 # Cryptojacking Forensic Triage
 
-A Python-based cryptojacking forensic triage CLI that performs YARA scanning,
-string extraction, pre/post SHA-256 evidence verification, structured finding
-generation, run manifest creation, and repeatable case-based reporting.
+> **Alpha software.** This is a research/education triage tool, not a finished or
+> supported product. Findings are analyst leads and require human validation. It is
+> not court-ready, not enterprise-ready, and does not prove compromise.
 
-This project scans a supplied file for indicators that may warrant analyst
-review. It does not acquire evidence, parse operating-system memory structures,
-attribute strings to processes, or prove that a host was compromised.
+`cj-triage` is an offline, evidence-aware command-line tool that scans a supplied
+artifact for cryptojacking indicators. It uses an in-process YARA engine, a bounded
+string extractor, a versioned rule pack, and a privacy-safe reporter. It records
+reproducibility metadata, fails closed when analysis is incomplete, and produces
+explainable findings for analyst review.
 
-> Findings are triage leads. They require analyst validation and must not be
-> treated as final forensic conclusions.
+## What it does
 
-## What the tool does
+- Resolves and hashes a supplied artifact before analysis (SHA-256).
+- Scans in-process with a curated YARA rule pack (`yara-python`).
+- Extracts bounded printable/UTF-16LE strings (no unbounded reads).
+- Builds structured findings with evidence strength, analytic confidence, and
+  deterministic correlation.
+- Produces schema-validated manifest, summary, and findings reports.
+- Re-hashes after analysis; detects integrity failure as a distinct terminal state.
+- Verifies its own reports (schema + output-hash tamper detection).
 
-- Resolves and hashes the supplied evidence file before analysis.
-- Runs each local YARA rule file and GNU `strings` without a shell.
-- Converts rule matches and selected extracted-string indicators into structured
-  findings.
-- Groups corroborating findings so repeated detection of the same underlying
-  indicator is not presented as multiple independent indicators.
-- Hashes the evidence again after analysis and reports whether it changed.
-- Records command results, tool versions, rule hashes, warnings, errors, and
-  output hashes in a run manifest.
-- Creates a unique report directory for every invocation.
+## What it does not do
 
-Wallet-format matching is performed over extracted strings in Python rather than
-through broad YARA regular expressions. Each match is labelled
-`WALLET_CANDIDATE` with `LOW` confidence. No checksum, ownership, activity, or
-network validation is performed.
+- Acquire evidence, parse OS memory, or attribute strings to processes.
+- Provide chain of custody, write protection, or legal admissibility.
+- Run as an EDR/SIEM/runtime agent or monitor live behavior.
+- Prove a host was compromised.
+- Validate wallet checksums, ownership, or network activity.
 
-## What the tool does not do
+## Supported platforms and Python
 
-- Evidence acquisition or chain-of-custody management.
-- Process-aware or operating-system-aware memory parsing.
-- Attribution of extracted strings to a running process.
-- External IOC enrichment, reputation checks, or network requests.
-- Validated compromise probability or automatic confirmation of compromise.
-- Dedicated IOC export; candidate indicators remain in `findings.json`.
+| OS | Python | Status |
+|---|---|---|
+| Windows 10+ | 3.10–3.12 | Supported (CI) |
+| Ubuntu 22.04+ | 3.10–3.12 | Supported (CI) |
+| macOS / ARM64 | 3.10–3.12 | Not validated |
 
-See [Limitations](docs/LIMITATIONS.md) for the complete scope statement and
-[Validation](docs/VALIDATION.md) for the tested environment and observed results.
+Engine: `yara-python` (in-process). See `docs/supported-platforms.md`.
 
-## Requirements and setup
-
-- Python 3.10 or newer. The runtime package uses only the Python standard library.
-- YARA command-line tool (`yara`).
-- GNU binutils `strings`.
-- pytest for development and testing, declared in `requirements-dev.txt`.
-
-On Debian or Ubuntu, YARA and GNU strings are commonly supplied by the `yara`
-and `binutils` packages. Installation and tool versions should be checked in the
-analyst's controlled environment.
-
-Create an isolated Python environment and install the development dependency:
+## Safe installation
 
 ```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements-dev.txt
-python -m pytest -ra
+python -m venv .venv
+.venv/Scripts/activate        # Windows  (or: source .venv/bin/activate)
+pip install -e ".[dev]"       # editable dev install
+# or from a built wheel:
+pip install cryptojacking_forensics-0.1.0a1-py3-none-any.whl
+# or with pipx:
+pipx install cryptojacking_forensics-0.1.0a1-py3-none-any.whl
 ```
 
-There is no `requirements.txt` because the Python runtime has no third-party
-package dependencies.
+The only runtime dependency is `yara-python`. No external `yara` or GNU `strings`
+binary is required.
 
-## Run
+## `cj-triage --help`
 
-Run commands from the repository root. Case IDs must be 1-64 characters, start
-with a letter or digit, and otherwise contain only letters, digits, periods,
-underscores, or hyphens.
+```
+cj-triage --help
+cj-triage scan artifact --help
+```
 
-Clean synthetic fixture:
+## Safe synthetic-fixture quickstart
 
 ```bash
-python -m cryptojacking_forensics \
-  --memory tests/fixtures/clean_sample.txt \
-  --case-id VALIDATION_CLEAN
+cj-triage scan artifact tests/fixtures/synthetic_miner_indicators.txt --case-id QUICKSTART
 ```
 
-Synthetic indicator-positive fixture:
+The fixture is inert text. It is not malware and contains only known indicator
+strings for testing.
+
+## Core CLI examples
 
 ```bash
-python -m cryptojacking_forensics \
-  --memory tests/fixtures/synthetic_miner_indicators.txt \
-  --case-id VALIDATION_SYNTHETIC
+# Scan an artifact
+cj-triage scan artifact PATH --case-id CASE001
+
+# Scan with explicit output dir and bundled rules
+cj-triage scan artifact PATH --case-id CASE001 --output ./out --rules ./cryptojacking_forensics/rules
+
+# Machine-readable JSON to stdout
+cj-triage scan artifact PATH --case-id CASE001 --format json
+
+# Environment and rule-pack check
+cj-triage doctor
+cj-triage rules check
+
+# Verify a previously produced report
+cj-triage verify-report ./out/CASE001/<run>/summary.json
+
+# Version
+cj-triage version
 ```
 
-The fixture is inert text and is not malware. It tests known rule and string
-indicators only.
+## Exit-code table
 
-Equivalent compatibility entry points are:
+| Code | Meaning |
+|---|---|
+| `0` | Completed successfully, no findings. |
+| `10` | Completed successfully, findings present. |
+| `20` | Incomplete or partial analysis. |
+| `30` | Evidence integrity failure. |
+| `64` | Command usage or configuration error. |
+| `70` | Internal or unrecoverable execution failure. |
+
+A failed, partial, or integrity-failure analysis never exits `0` and is never
+labelled "clean."
+
+## Output artifact table
+
+| File | Purpose |
+|---|---|
+| `manifest.json` | Execution record: input identity/hashes, stages, engine/rule versions, limits, controls, output hashes. |
+| `findings.json` | Structured YARA and string findings with correlation. |
+| `summary.json` | Machine-readable status, evidence strength, counts, limitations. |
+| `summary.txt` | Human-readable summary. |
+| `strings.txt` | Extracted strings (only with `--raw`). |
+
+## Finding interpretation
+
+Each finding has an `evidence_strength` (`STRONG`/`MEDIUM`/`WEAK`/`NONE`) and an
+analytic `confidence`. Findings are correlated into independent indicator groups;
+the `unvalidated_triage_score` is a bounded count of those groups, **not** a
+probability or risk score. Review `findings.json` for context before drawing any
+conclusion.
+
+## Evidence-integrity boundaries
+
+- Read-only open does not prove write protection.
+- Pre/post hashes check that bytes were unchanged *during this tool's analysis*;
+  they do not establish acquisition provenance or chain of custody.
+- Integrity failure (`30`) is a distinct, terminal state.
+
+## Privacy and redaction behavior
+
+By default the tool omits raw strings and absolute paths. Report outputs keep only
+display (basename) paths. Use `--raw` only when the evidence context is controlled
+and you accept the disclosure risk. Redaction before external sharing remains the
+analyst's responsibility.
+
+## Rule pack
+
+Bundled rules live in `cryptojacking_forensics/rules/` and carry metadata (rule ID,
+version, author, purpose, references, MITRE ATT&CK where justified, confidence
+rationale, known false positives, last-reviewed). See `rules/rule_pack.json`.
+
+## Validation status
+
+61 tests pass locally (Windows / Python 3.11.15); Ubuntu + Windows CI matrix runs
+on 3.10–3.12. See `docs/VALIDATION.md` for the full record and known false
+positive/negative risks. Synthetic tests do not establish real-world detection
+performance.
+
+## Development commands
 
 ```bash
-python Tools/full_pipeline.py --memory FILE --case-id CASE001
-./Scripts/run_pipeline.sh FILE CASE001
+python -m pytest -ra                       # run tests
+python -m pytest --cov=cryptojacking_forensics   # coverage
+python -m cryptojacking_forensics doctor   # environment check
+python -m cryptojacking_forensics rules check    # rule compilation
+python tasks.py help                       # task runner (setup/test/lint/build/validate)
 ```
 
-Each run writes to:
+## Security reporting
 
-```text
-Reports/<case_id>/<UTC timestamp>-<random suffix>/
-```
+Use GitHub **private vulnerability reporting** (Security tab). Do not open public
+issues for security defects, and never attach malware, miner binaries, credentials,
+or live evidence. See `SECURITY.md`.
 
-## Output structure
+## License
 
-- `manifest.json`: execution record containing input metadata, pre/post hashes,
-  analysis status, executed commands, return codes, timings, tool versions, YARA
-  rule hashes, warnings/errors, and hashes of the other output artifacts. It does
-  not self-hash. Absolute paths are retained for traceability alongside safer
-  display paths; see the privacy note below.
-- `findings.json`: structured YARA and extracted-string findings. Correlation
-  fields identify corroborating records and whether a record represents an
-  independent indicator. An empty list is meaningful only when
-  `analysis_status` is `SUCCESS`.
-- `summary.json`: machine-readable status, hash verification result, total finding
-  count, independent indicator count, severity, explicitly unvalidated score,
-  warnings, errors, and limitations.
-- `summary.txt`: compact key/value rendering of `summary.json` for human review.
-- `yara.txt`: captured YARA stdout grouped by rule file.
-- `strings.txt`: captured GNU strings stdout.
+Apache-2.0. Third-party components (notably `yara-python`) retain their own
+licenses; see `LICENSE` for notices. The project does not claim ownership of
+third-party samples, rules, or code.
 
-Statuses are `SUCCESS`, `PARTIAL`, `FAILED`, or `INTEGRITY_FAILURE`. A partial or
-failed scan is not labelled clean, and its severity is `UNDETERMINED`.
+## Links
 
-The `unvalidated_triage_score` counts independent correlated indicator groups,
-up to ten. It is retained for prototype continuity and is not a calibrated
-probability.
-
-## Evidence hashing
-
-The pre-analysis SHA-256 identifies the bytes supplied to the scanner. The
-post-analysis SHA-256 checks whether those bytes changed during analysis. A
-mismatch produces `INTEGRITY_FAILURE`. Matching hashes do not establish
-provenance, correct acquisition, or chain of custody.
-
-## Path privacy
-
-`manifest.json`, `findings.json`, raw YARA output, and recorded commands may
-contain absolute local paths. The manifest also provides `input_file_display`
-and `display_path` fields for contexts where workstation layout should not be
-shared. Redaction is not automatic; analysts must review reports before
-disclosure.
-
-## Tests
-
-```bash
-source venv/bin/activate
-python -m pytest -ra
-```
-
-The test fixtures under `tests/fixtures/` are inert text files. Test success
-demonstrates expected prototype behavior for those controlled inputs, not
-real-world detection performance.
+- Roadmap: [`docs/project-roadmap.html`](docs/project-roadmap.html)
+- Architecture: [`docs/architecture.md`](docs/architecture.md)
+- Validation: [`docs/VALIDATION.md`](docs/VALIDATION.md)
+- Limitations: [`docs/LIMITATIONS.md`](docs/LIMITATIONS.md)
+- Threat model: [`docs/threat-model.md`](docs/threat-model.md)
+- Safe-sample policy: [`docs/safe-sample-policy.md`](docs/safe-sample-policy.md)

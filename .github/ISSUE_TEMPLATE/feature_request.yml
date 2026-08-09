@@ -1,0 +1,23 @@
+name: Feature request
+description: Propose an enhancement for cj-triage
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or gap
+      description: What limitation or missing capability are you addressing?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed approach
+      description: Describe the change, keeping within the offline triage scope.
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        Out of scope (do not propose): GUI, hosted platform, endpoint agent, SIEM, EDR,
+        RBAC service, REST platform, legal-reporting system, or threat-sharing network.
