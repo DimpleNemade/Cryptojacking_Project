@@ -1,0 +1,3 @@
+# Direct runtime dependencies; pip-audit resolves and checks their transitive dependencies.
+jsonschema>=4,<5
+yara-python>=4.3,<5

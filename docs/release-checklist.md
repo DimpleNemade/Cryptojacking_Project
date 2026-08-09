@@ -1,25 +1,31 @@
-# Release Checklist
+# Alpha Release Checklist
 
-Use this for every alpha/prerelease.
+## Verified locally for 0.1.0a2 on 2026-08-10
 
-## Pre-release
-- [ ] `python -m pytest -ra` passes on the default branch (Ubuntu + Windows in CI).
-- [ ] `cj-triage doctor`, `cj-triage rules check`, `cj-triage verify-report` work.
-- [ ] Wheel builds and installs in a clean environment outside the source tree.
-- [ ] `cj-triage` runs a synthetic fixture scan from the clean install (exit 10).
-- [ ] CodeQL and dependency workflows are operational.
-- [ ] SBOM generated and attached.
-- [ ] README commands executed and verified.
-- [ ] No live miner/malware binaries, no invalid Windows path in the tree.
-- [ ] LICENSE, SECURITY.md, CONTRIBUTING.md, governance templates present.
-- [ ] Validation doc updated with actual environment, commands, and results.
+- [x] Lint and pre-commit hooks pass.
+- [x] 46 tests pass at 85.35% statement coverage with the 85% gate.
+- [x] `doctor`, `rules check`, and bundle verification pass.
+- [x] Wheel and source distribution build from standards-based metadata.
+- [x] Wheel installs in a clean environment outside the source tree.
+- [x] Installed CLI returns `10` for the inert positive fixture and verifies its bundle.
+- [x] Source distribution contains governance/docs/fixtures and no miner binary.
+- [x] Local CycloneDX 1.6 SBOM generation and validation pass for the clean wheel environment.
+- [x] README and validation record match reproduced behavior.
 
-## Release
-- [ ] Tag `v0.1.0-alpha.N` created.
-- [ ] GitHub prerelease created from the tag with wheel, sdist, checksums, SBOM.
-- [ ] Provenance/attestation attached where GitHub supports it.
-- [ ] Not published to PyPI without explicit authorization.
+## Remote release gates
 
-## Post-release
-- [ ] Changelog updated.
-- [ ] Issues closed only where acceptance criteria are met with evidence.
+- [ ] Exact commit passes required Windows/Ubuntu, Python 3.10-3.12 CI jobs.
+- [ ] CodeQL, runtime dependency audit, pre-commit, and SBOM workflows pass.
+- [ ] `main` branch protection/ruleset is enabled and tested with a pull request.
+- [ ] Release build produces wheel, sdist, checksums, SBOM, and provenance attestation.
+- [ ] GitHub prerelease is created from `v0.1.0-alpha.2`.
+
+Do not publish to PyPI without explicit authorization. Do not mark remote gates
+complete from workflow YAML alone.
+
+## Validity gates intentionally not claimed
+
+- Independent competent-person validation.
+- Versioned representative corpus and measured detection performance.
+- External operator pilot or validated demand.
+- Production, enterprise, or court readiness.

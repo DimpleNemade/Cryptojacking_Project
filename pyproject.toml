@@ -1,14 +1,15 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "cryptojacking-forensics"
-version = "0.1.0a1"
+version = "0.1.0a2"
 description = "Offline, evidence-aware cryptojacking indicator-triage CLI with an in-process YARA engine, privacy-aware findings, and reproducible run metadata."
 readme = "README.md"
-requires-python = ">=3.10"
-license = { text = "Apache-2.0" }
+requires-python = ">=3.10,<3.13"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
 authors = [{ name = "Dimple Nemade" }]
 maintainers = [{ name = "Dimple Nemade" }]
 keywords = ["forensics", "cryptojacking", "triage", "yara", "dfir", "incident-response"]
@@ -16,7 +17,6 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Information Technology",
     "Intended Audience :: System Administrators",
-    "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
@@ -26,12 +26,22 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
+    "jsonschema>=4,<5",
     "yara-python>=4.3,<5",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8,<9", "coverage>=7,<9", "jsonschema>=4,<5"]
-test = ["pytest>=8,<9", "coverage>=7,<9", "jsonschema>=4,<5"]
+dev = [
+    "build>=1.2,<2",
+    "coverage[toml]>=7,<9",
+    "mypy>=1.11,<2",
+    "pre-commit>=4,<5",
+    "pytest>=8,<9",
+    "pytest-cov>=6,<8",
+    "ruff>=0.12,<1",
+    "types-jsonschema>=4,<5",
+]
+test = ["pytest>=8,<9", "pytest-cov>=6,<8"]
 
 [project.urls]
 Homepage = "https://github.com/DimpleNemade/Cryptojacking_Project"
@@ -46,7 +56,7 @@ cj-triage = "cryptojacking_forensics.cli:main"
 include = ["cryptojacking_forensics*"]
 
 [tool.setuptools.package-data]
-cryptojacking_forensics = ["rules/*.yar", "schemas/*.json"]
+cryptojacking_forensics = ["py.typed", "rules/*.yar", "rules/*.json", "schemas/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -59,3 +69,13 @@ omit = ["tests/*"]
 [tool.ruff]
 target-version = "py310"
 line-length = 100
+
+[tool.mypy]
+python_version = "3.10"
+check_untyped_defs = true
+no_implicit_optional = true
+warn_unused_ignores = true
+
+[[tool.mypy.overrides]]
+module = ["yara"]
+ignore_missing_imports = true

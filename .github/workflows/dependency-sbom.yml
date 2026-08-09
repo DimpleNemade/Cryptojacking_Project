@@ -16,10 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Dependency Review
-        uses: actions/dependency-review-action@v4
-        with:
-          fail-on-severity: high
+      - name: Audit runtime dependencies
+        run: |
+          python -m pip install --upgrade pip pip-audit
+          pip-audit -r requirements-audit.txt --strict
 
   sbom:
     runs-on: ubuntu-latest
@@ -28,15 +28,25 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install
+      - name: Build runtime environment
         run: |
           python -m pip install --upgrade pip
-          pip install -e ".[dev]"
-          pip install cyclonedx-py
-      - name: Generate SBOM (CycloneDX)
-        run: cyclonedx-py -o sbom.cdx.json -f json
+          python -m pip install build cyclonedx-bom
+          python -m build --wheel
+          python -m venv sbom-env
+          sbom-env/bin/pip install dist/*.whl
+      - name: Generate runtime SBOM (CycloneDX)
+        run: >-
+          cyclonedx-py environment sbom-env/bin/python
+          --output-format JSON
+          --output-file sbom.cdx.json
+          --output-reproducible
+          --validate
+          --pyproject pyproject.toml
+          --mc-type application
       - name: Upload SBOM
         uses: actions/upload-artifact@v4
         with:
           name: sbom
           path: sbom.cdx.json
+          if-no-files-found: error

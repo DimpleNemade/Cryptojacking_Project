@@ -1,100 +1,99 @@
-# Validation Record
+# Validation Record: 0.1.0a2
 
-## Purpose
+## Scope
 
-This validation checks whether the `cj-triage` CLI behaves as documented for
-controlled synthetic inputs. It covers automated tests, real in-process YARA
-(`yara-python`) and bounded string extraction, report generation, finding
-correlation, schema validation, report verification, and pre/post evidence hashing.
-This is triage validation, not legal-admissibility validation.
+This record covers controlled synthetic inputs and the local distribution path. It
+does not establish real-world cryptojacking detection performance, forensic
+admissibility, or support for environments not listed as actually tested.
 
-## Environment matrix
+## Environment
 
-| Property | Value |
+| Property | Observed value |
 |---|---|
-| Validation date | 2026-08-09 |
-| OS | Windows 10 (validation host) + Ubuntu 22.04 (CI, see `.github/workflows/ci.yml`) |
-| Python | CPython 3.11.15 (local); 3.10/3.11/3.12 (CI matrix) |
-| pytest | 8.4.x |
-| Engine | `yara-python` 4.5.4 |
-| Wheel | built with `python -m build --wheel`; installed clean outside source tree |
+| Date | 2026-08-10 |
+| Host | Windows 11 10.0.26200, x86-64 |
+| Python | CPython 3.12.4 |
+| pytest | 8.4.2 |
+| YARA engine | `yara-python` 4.5.4 |
+| Package | `cryptojacking-forensics` 0.1.0a2 |
 
-## Commands
+Ubuntu, Windows 10, and Python 3.10/3.11 were not locally executed in this record.
+The GitHub workflow defines a Windows/Ubuntu and Python 3.10-3.12 matrix; that is a
+configuration statement, not evidence of a green run for an unpublished revision.
+
+## Commands reproduced
 
 ```bash
+python -m ruff check cryptojacking_forensics tests tasks.py
+python -m ruff format --check cryptojacking_forensics tests tasks.py
+python -m mypy cryptojacking_forensics tests tasks.py
 python -m pytest -ra
-python -m pytest --cov=cryptojacking_forensics --cov-report=term-missing
+python -m pytest --cov=cryptojacking_forensics --cov-report=xml --cov-fail-under=85
+python -m pytest tests/test_schema.py -ra
 python -m cryptojacking_forensics doctor
 python -m cryptojacking_forensics rules check
-python -m cryptojacking_forensics scan artifact tests/fixtures/synthetic_miner_indicators.txt --case-id VALIDATION_SYNTHETIC
-python -m cryptojacking_forensics verify-report <run>/summary.json
+python -m pre_commit run --all-files --show-diff-on-failure
+pip-audit -r requirements-audit.txt --strict
+python -m build
+cyclonedx-py environment <clean-python> --output-format JSON --output-file sbom.cdx.json --output-reproducible --validate --pyproject pyproject.toml --mc-type application
 ```
 
-## Fixtures
+A second clean virtual environment installed only the built wheel and runtime
+dependencies. From outside the source directory it ran:
 
-- `tests/fixtures/clean_sample.txt`: inert text with no intended miner indicator.
-- `tests/fixtures/synthetic_miner_indicators.txt`: inert text containing known
-  XMRig and Stratum/configuration strings. It is not malware.
+```bash
+cj-triage --version
+cj-triage doctor
+cj-triage rules check
+cj-triage scan artifact synthetic_miner_indicators.txt --case-id WHEEL
+cj-triage verify-report <generated-manifest>
+```
 
-## Actual results (this run)
+## Observed results
 
-- Automated suite: **61 tests passed** (Windows 10 / Python 3.11.15).
-- Clean fixture: `SUCCESS`, hash `PASS`, 0 findings, exit `0`.
-- Synthetic indicator fixture: `SUCCESS`, hash `PASS`, 8 findings grouped into 5
-  independent indicator groups, evidence strength `MEDIUM`, exit `10`.
-- Rule pack compiles; `rules check` reports OK.
-- Wheel builds and installs in a clean venv outside the source tree; `cj-triage
-  --version` and a synthetic scan (exit 10) succeed from that environment.
-- Schema validation of manifest/summary/findings passes; `verify-report` detects
-  tampered (schema-invalid) reports (exit 70).
-- Engine timeout param handled without crash; match-cap truncation reported.
-- Exit-code contract verified for 0/10/20/30/64/70 across tests.
+- Ruff lint and format checks: passed.
+- mypy: passed for 21 source/test/task files.
+- Pre-commit hooks: passed, including YAML, size, conflict, secret, lint,
+  formatting, typing, and rule-compilation checks.
+- Runtime dependency audit: passed; no known vulnerabilities were reported for
+  the direct runtime requirements or their resolved transitive dependencies.
+- Tests: **46 passed**.
+- Statement coverage: **85.35% overall**; engine 92%, evidence 92%, findings 88%,
+  streaming string extraction 94%.
+- Clean fixture: `SUCCESS`, no findings, integrity `PASS`, exit `0`.
+- Synthetic fixture: `SUCCESS`, eight findings in five independent groups,
+  evidence strength `MEDIUM`, integrity `PASS`, exit `10`.
+- Missing rule pack: `PARTIAL`, exit `20`; it is not reported as clean.
+- Oversized input: a failed report bundle is written, exit `20`.
+- Schema-invalid report: exit `70`.
+- Schema-valid sibling tampering: manifest verification detects the hash mismatch,
+  exit `30`.
+- Wheel and source distribution built successfully; the source distribution
+  contains docs and inert fixtures and excludes the quarantined/excluded trees.
+- Clean wheel install, packaged `doctor`, packaged rule compilation, packaged
+  synthetic scan, and bundle verification succeeded.
+- The package-content audit found zero entries from quarantined samples, the
+  excluded repository copy, reports, virtual environments, or cache directories.
+- CycloneDX generation and validation succeeded with specification 1.6, the
+  `cryptojacking-forensics` 0.1.0a2 root component, and eight dependency components.
 
-### Coverage (local, this run; not the 85% target automatically)
+## What the tests prove
 
-Overall ~66%. Core paths are higher: engine 90%, evidence 86%, findings 85%,
-hashing/strings 100%. The CLI command surface is exercised via subprocess tests;
-in-process statement coverage of `cli.py` is lower because subprocess runs count
-against the spawned interpreter. No code path is left untested by design — see the
-engineering target note below.
+They provide repeatable evidence for the documented CLI states, limits, schema
+contract, deterministic ordering/correlation, privacy defaults, artifact-hash
+verification, and operation of the actual bundled YARA engine on inert fixtures.
 
-> Engineering target: at least 85% overall, with higher coverage for evidence,
-> status, exit-code, and report-validation paths. The target is a goal, not a
-> claim; the measured value above is the actual result for this run.
+## What the tests do not prove
 
-## Analysis status behavior
+- Detection precision, recall, false-positive rate, or coverage on real incidents.
+- Resistance to obfuscation, compression, encryption, fragmentation, or new miners.
+- Process execution, wallet ownership/activity, or host compromise.
+- Evidence acquisition provenance, write blocking, chain of custody, or admissibility.
+- Independent competent-person validation as recommended for examination tools.
+- macOS, ARM64, Python 3.13+, or any unexecuted CI environment.
 
-- `SUCCESS`: all stages succeeded, rules present, pre/post hashes matched.
-- `PARTIAL`: at least one stage succeeded and at least one failed, or rules absent.
-- `FAILED`: no analysis stage succeeded while evidence hashing still passed.
-- `INTEGRITY_FAILURE`: pre/post evidence hash verification did not pass.
-- `UNDETERMINED` severity is used when status is not `SUCCESS`; a non-SUCCESS report
-  is **never** labelled "clean."
+## Known test limitations
 
-## Known false-positive risks
-
-- Miner names, Stratum strings, common mining ports, pool-related words, and
-  wallet-shaped strings can occur in benign files, documentation, logs, or security
-  research material.
-- Wallet candidates are format-based only; not checksum-validated.
-- Multiple rules may match one underlying string; correlation reduces count
-  inflation but does not prove a common cause.
-
-## Known false-negative risks
-
-- Obfuscated, encrypted, compressed, encoded, fragmented, or novel indicators may
-  not be visible to the rule pack.
-- The rule set is limited and cannot cover every miner, pool, protocol variant, or
-  wallet format.
-- Extracted strings are not associated with processes or OS memory structures.
-
-## Not performed / not validated
-
-- Real malware or live miner binaries (excluded by safe-sample policy).
-- Large real memory dumps.
-- macOS/ARM64 operation (unverified).
-- Independent external validation (a separate, non-developer review is recommended
-  before any claimed operational use).
-
-Synthetic validation does **not** establish real-world detection performance or
-legal admissibility.
+The corpus contains two inert text files. It has no versioned real-world labels,
+benign hard negatives, evasive variants, held-out set, denominators, or confidence
+intervals. Therefore no detection-performance percentage is reported.

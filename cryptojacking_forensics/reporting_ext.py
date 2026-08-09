@@ -1,13 +1,9 @@
-"""Summary assembly for a triage run.
-
-Reports an evidence-strength summary, NOT a calibrated risk probability. The
-unvalidated_triage_score is retained only as a bounded indicator-group count and is
-explicitly not a risk model.
-"""
+"""Summary assembly for a triage run."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any
 
 from .findings import overall_evidence_strength
@@ -28,37 +24,41 @@ class SummaryInput:
     warnings: list[str]
     errors: list[str]
     limitations: list[str]
-    unvalidated_triage_score: int | None
 
 
-def build_summary(m: SummaryInput) -> dict[str, Any]:
-    independent = sum(1 for f in m.findings if getattr(f, "independent_indicator", False))
-    strength = overall_evidence_strength(m.findings) if m.analysis_status == "SUCCESS" else "UNDETERMINED"
-    if m.analysis_status == "SUCCESS" and not m.findings:
-        explanation = "No miner indicators were found by the completed triage analyses."
-    elif m.analysis_status == "SUCCESS":
+def build_summary(value: SummaryInput) -> dict[str, Any]:
+    independent = sum(
+        1 for finding in value.findings if getattr(finding, "independent_indicator", False)
+    )
+    strength = (
+        overall_evidence_strength(value.findings)
+        if value.analysis_status == "SUCCESS"
+        else "UNDETERMINED"
+    )
+    if value.analysis_status == "SUCCESS" and not value.findings:
+        explanation = "No configured indicators were found by the completed analyses."
+    elif value.analysis_status == "SUCCESS":
         explanation = (
-            f"{len(m.findings)} triage findings were grouped into {independent} independent "
-            "indicator groups; review findings.json."
+            f"{len(value.findings)} findings form {independent} independent indicator "
+            "groups; analyst validation is required."
         )
     else:
         explanation = "Analysis incomplete; absence of findings must not be interpreted as clean."
     return {
         "schema_version": SCHEMA_VERSION,
-        "case_id": m.case_id,
-        "run_id": m.run_id,
-        "analysis_status": m.analysis_status,
-        "hash_verification": m.hash_verification,
-        "input_sha256_before": m.input_sha256_before,
-        "input_sha256_after": m.input_sha256_after,
-        "finding_count": len(m.findings),
+        "case_id": value.case_id,
+        "run_id": value.run_id,
+        "analysis_status": value.analysis_status,
+        "hash_verification": value.hash_verification,
+        "input_sha256_before": value.input_sha256_before,
+        "input_sha256_after": value.input_sha256_after,
+        "finding_count": len(value.findings),
         "independent_indicator_count": independent,
         "evidence_strength": strength,
         "explanation": explanation,
-        "warnings": m.warnings,
-        "errors": m.errors,
-        "unvalidated_triage_score": m.unvalidated_triage_score,
-        "limitations": m.limitations,
+        "warnings": value.warnings,
+        "errors": value.errors,
+        "limitations": value.limitations,
     }
 
 

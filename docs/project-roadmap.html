@@ -2,505 +2,157 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Evidence-based product and engineering roadmap for the Cryptojacking Forensic Triage project.">
-  <title>Cryptojacking Triage — Evidence-Based Product Roadmap</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>cj-triage — Alpha Closeout and Evidence Roadmap</title>
   <style>
-    :root {
-      --ink: #112238;
-      --muted: #536579;
-      --paper: #f4f7f9;
-      --card: #ffffff;
-      --line: #d9e2e8;
-      --navy: #081827;
-      --navy-2: #102c40;
-      --cyan: #20c7c5;
-      --cyan-soft: #dff8f6;
-      --amber: #d99313;
-      --amber-soft: #fff4d9;
-      --red: #be3a47;
-      --red-soft: #fde8ea;
-      --green: #2e7d5b;
-      --green-soft: #e4f4ec;
-      --blue: #2d69a7;
-      --blue-soft: #e7f0fa;
-      --shadow: 0 14px 38px rgba(8, 24, 39, .09);
-      --radius: 18px;
-    }
-
-    * { box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      margin: 0;
-      color: var(--ink);
-      background:
-        radial-gradient(circle at 85% 0%, rgba(32,199,197,.10), transparent 24rem),
-        var(--paper);
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      line-height: 1.58;
-    }
-    a { color: #0b6680; text-underline-offset: 3px; }
-    a:hover { color: #07475a; }
-    code, .mono { font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace; }
-    code { background: #edf2f5; padding: .12rem .32rem; border-radius: 5px; font-size: .92em; }
-    h1, h2, h3, h4 { line-height: 1.16; margin-top: 0; letter-spacing: -.02em; }
-    h2 { font-size: clamp(1.65rem, 3vw, 2.35rem); margin-bottom: .55rem; }
-    h3 { font-size: 1.18rem; margin-bottom: .45rem; }
-    p { margin-top: 0; }
-
-    .skip { position: absolute; left: -9999px; }
-    .skip:focus { left: 1rem; top: 1rem; z-index: 100; background: white; padding: .7rem 1rem; }
-    .topbar {
-      position: sticky; top: 0; z-index: 20;
-      background: rgba(8, 24, 39, .94); backdrop-filter: blur(12px);
-      border-bottom: 1px solid rgba(255,255,255,.11);
-    }
-    .topbar-inner { max-width: 1180px; margin: auto; min-height: 58px; padding: .65rem 1.2rem; display: flex; gap: 1.4rem; align-items: center; }
-    .brand { color: white; text-decoration: none; font-weight: 780; white-space: nowrap; }
-    .brand span { color: var(--cyan); }
-    nav { display: flex; gap: 1rem; overflow-x: auto; scrollbar-width: none; }
-    nav a { color: #d9e7ef; text-decoration: none; font-size: .88rem; white-space: nowrap; }
-    nav a:hover { color: white; }
-
-    .hero {
-      color: white; background:
-        linear-gradient(105deg, rgba(8,24,39,.98), rgba(16,44,64,.96)),
-        var(--navy);
-      overflow: hidden; position: relative;
-    }
-    .hero::after {
-      content: ""; position: absolute; width: 34rem; height: 34rem; right: -12rem; bottom: -24rem;
-      border: 1px solid rgba(32,199,197,.25); border-radius: 50%; box-shadow: 0 0 0 4rem rgba(32,199,197,.025), 0 0 0 8rem rgba(32,199,197,.02);
-    }
-    .hero-inner { max-width: 1180px; margin: auto; padding: 5.5rem 1.2rem 4.5rem; position: relative; z-index: 1; }
-    .eyebrow { color: var(--cyan); text-transform: uppercase; letter-spacing: .15em; font-weight: 800; font-size: .77rem; }
-    h1 { font-size: clamp(2.45rem, 6vw, 5.1rem); max-width: 900px; margin: .7rem 0 1.15rem; }
-    .lede { max-width: 780px; color: #d5e0e7; font-size: clamp(1.05rem, 2vw, 1.28rem); }
-    .verdict { max-width: 900px; margin-top: 2rem; padding: 1.25rem 1.4rem; border-left: 4px solid var(--amber); background: rgba(255,255,255,.075); border-radius: 0 12px 12px 0; }
-    .verdict strong { color: white; }
-    .meta { display: flex; flex-wrap: wrap; gap: .6rem; margin-top: 1.6rem; }
-    .meta span { border: 1px solid rgba(255,255,255,.17); border-radius: 999px; padding: .42rem .72rem; color: #dce8ee; font-size: .82rem; }
-
-    main { max-width: 1180px; margin: auto; padding: 3.7rem 1.2rem 6rem; }
-    section { scroll-margin-top: 82px; margin-bottom: 5rem; }
-    .section-intro { max-width: 790px; color: var(--muted); font-size: 1.03rem; margin-bottom: 1.6rem; }
-    .grid { display: grid; gap: 1rem; }
-    .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    .grid-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-    .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.35rem; box-shadow: var(--shadow); }
-    .card p:last-child, .card ul:last-child { margin-bottom: 0; }
-    .kpi { min-height: 145px; }
-    .kpi .value { display: block; color: var(--navy); font-size: 2.2rem; font-weight: 850; letter-spacing: -.04em; }
-    .kpi .label { font-weight: 760; }
-    .kpi .note { color: var(--muted); font-size: .88rem; }
-
-    .pill { display: inline-flex; align-items: center; gap: .35rem; border-radius: 999px; padding: .28rem .58rem; font-weight: 780; font-size: .74rem; text-transform: uppercase; letter-spacing: .04em; }
-    .red { color: #8d2030; background: var(--red-soft); }
-    .amber { color: #7f5605; background: var(--amber-soft); }
-    .green { color: #1f6648; background: var(--green-soft); }
-    .blue { color: #245b91; background: var(--blue-soft); }
-    .cyan { color: #09635f; background: var(--cyan-soft); }
-    .dot { width: .55rem; height: .55rem; border-radius: 50%; background: currentColor; }
-
-    .scorecard { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); background: white; box-shadow: var(--shadow); }
-    table { width: 100%; border-collapse: collapse; }
-    th, td { text-align: left; padding: .92rem 1rem; vertical-align: top; border-bottom: 1px solid var(--line); }
-    th { background: #eef3f6; color: #34485b; font-size: .76rem; text-transform: uppercase; letter-spacing: .06em; }
-    tr:last-child td { border-bottom: 0; }
-    td small { color: var(--muted); }
-
-    .truth-list { list-style: none; padding: 0; margin: 0; }
-    .truth-list li { padding: .7rem 0 .7rem 1.55rem; border-bottom: 1px solid var(--line); position: relative; }
-    .truth-list li:last-child { border: 0; }
-    .truth-list li::before { content: ""; position: absolute; left: 0; top: 1.1rem; width: .58rem; height: .58rem; background: var(--cyan); border-radius: 2px; transform: rotate(45deg); }
-    .callout { border-radius: var(--radius); padding: 1.25rem 1.35rem; border: 1px solid; }
-    .callout.redbox { border-color: #efbbc0; background: var(--red-soft); }
-    .callout.amberbox { border-color: #ecd39d; background: var(--amber-soft); }
-    .callout.greenbox { border-color: #b9dfcd; background: var(--green-soft); }
-    .callout strong { display: block; margin-bottom: .25rem; }
-
-    .gap-list { display: grid; gap: .8rem; }
-    details { background: white; border: 1px solid var(--line); border-radius: 14px; box-shadow: 0 7px 20px rgba(8,24,39,.05); }
-    summary { cursor: pointer; list-style: none; padding: 1rem 1.1rem; display: flex; align-items: center; gap: .75rem; font-weight: 780; }
-    summary::-webkit-details-marker { display: none; }
-    summary::after { content: "+"; margin-left: auto; color: var(--muted); font-size: 1.35rem; font-weight: 450; }
-    details[open] summary::after { content: "−"; }
-    .detail-body { padding: 0 1.1rem 1.1rem; color: #354b5f; }
-    .detail-body p { margin-bottom: .55rem; }
-    .evidence { border-left: 3px solid var(--cyan); padding-left: .75rem; color: var(--muted); font-size: .91rem; }
-
-    .position { background: linear-gradient(135deg, var(--navy), var(--navy-2)); color: white; border-radius: 22px; padding: 2rem; box-shadow: var(--shadow); }
-    .position .section-intro { color: #d0dde5; margin-bottom: 0; }
-    .position h2 { max-width: 850px; }
-    .position em { color: var(--cyan); font-style: normal; }
-
-    .landscape td:first-child { font-weight: 760; min-width: 150px; }
-    .landscape .ours { background: #f0fbfa; }
-    .fit { font-weight: 760; color: var(--green); }
-    .no-fit { font-weight: 760; color: var(--red); }
-
-    .timeline { position: relative; margin-top: 2rem; }
-    .timeline::before { content: ""; position: absolute; left: 22px; top: 12px; bottom: 20px; width: 2px; background: #b9c8d2; }
-    .phase { display: grid; grid-template-columns: 46px 1fr; gap: 1rem; position: relative; margin-bottom: 1.25rem; }
-    .phase-marker { width: 46px; height: 46px; border-radius: 50%; display: grid; place-items: center; background: var(--navy); color: white; font-weight: 850; border: 5px solid var(--paper); z-index: 1; }
-    .phase-card { background: white; border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; box-shadow: var(--shadow); }
-    .phase-top { display: flex; flex-wrap: wrap; align-items: center; gap: .65rem; margin-bottom: .7rem; }
-    .phase-top h3 { margin: 0; font-size: 1.35rem; }
-    .phase-meta { color: var(--muted); font-size: .86rem; }
-    .phase-grid { display: grid; grid-template-columns: 1.2fr .8fr; gap: 1.2rem; }
-    .phase ul { padding-left: 1.15rem; margin: .5rem 0 0; }
-    .gate { background: #f1f6f8; border-radius: 12px; padding: 1rem; }
-    .gate h4 { color: #29485a; margin-bottom: .45rem; }
-
-    .command { background: #071724; color: #d9eef1; border-radius: 14px; padding: 1.05rem; overflow-x: auto; font-size: .88rem; }
-    .command .prompt { color: var(--cyan); }
-    .contract { counter-reset: contract; }
-    .contract .card { position: relative; padding-left: 3.5rem; }
-    .contract .card::before { counter-increment: contract; content: counter(contract); position: absolute; left: 1.1rem; top: 1.2rem; width: 1.75rem; height: 1.75rem; border-radius: 50%; display: grid; place-items: center; color: white; background: var(--navy); font-size: .8rem; font-weight: 800; }
-
-    .metric { border-top: 4px solid var(--cyan); }
-    .metric .formula { color: var(--muted); font-size: .86rem; }
-    .do-not { border-left: 4px solid var(--red); }
-    .source-list { columns: 2; column-gap: 2.4rem; }
-    .source-list li { break-inside: avoid; margin-bottom: .65rem; }
-    .fineprint { color: var(--muted); font-size: .85rem; }
-
-    footer { background: var(--navy); color: #cfdae2; }
-    .footer-inner { max-width: 1180px; margin: auto; padding: 2rem 1.2rem; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 1rem; }
-    footer a { color: var(--cyan); }
-
-    @media (max-width: 900px) {
-      .grid-4, .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .phase-grid { grid-template-columns: 1fr; }
-      .source-list { columns: 1; }
-    }
-    @media (max-width: 620px) {
-      .hero-inner { padding-top: 3.6rem; }
-      .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; }
-      .topbar-inner { align-items: flex-start; flex-direction: column; gap: .35rem; }
-      nav { width: 100%; }
-      .timeline::before { left: 17px; }
-      .phase { grid-template-columns: 36px 1fr; gap: .7rem; }
-      .phase-marker { width: 36px; height: 36px; border-width: 4px; }
-      th, td { padding: .75rem; }
-    }
-    @media print {
-      .topbar { display: none; }
-      body { background: white; font-size: 10pt; }
-      .hero { background: #102c40 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-      .hero-inner { padding: 2rem 1rem; }
-      main { padding: 2rem 0; }
-      section { break-inside: avoid; margin-bottom: 2rem; }
-      .card, .scorecard, .phase-card { box-shadow: none; }
-      details { break-inside: avoid; }
-      details .detail-body { display: block; }
-      a { color: inherit; text-decoration: none; }
-    }
+    :root { color-scheme: dark; --bg:#09111c; --panel:#101c2c; --line:#29415e;
+      --text:#e7eef7; --muted:#9fb0c3; --cyan:#52d6e8; --green:#66d79a;
+      --amber:#ffc66d; --red:#ff7b86; }
+    * { box-sizing:border-box } body { margin:0; background:linear-gradient(145deg,#07101a,#0d1a29);
+      color:var(--text); font:16px/1.58 system-ui,-apple-system,Segoe UI,sans-serif }
+    header,main,footer { width:min(1120px,92vw); margin:auto } header { padding:5rem 0 2.5rem }
+    .eyebrow { color:var(--cyan); letter-spacing:.14em; text-transform:uppercase; font-size:.78rem }
+    h1 { max-width:900px; margin:.5rem 0 1rem; font-size:clamp(2.4rem,6vw,5.2rem); line-height:1.02 }
+    h2 { margin:0 0 .5rem; font-size:1.75rem } h3 { margin:.1rem 0 .5rem }
+    p { margin:.35rem 0 1rem } a { color:var(--cyan) } code { color:#b9f2ff }
+    .lede { max-width:850px; color:var(--muted); font-size:1.15rem }
+    .status { margin-top:1.6rem; padding:1.1rem 1.3rem; border:1px solid var(--amber);
+      background:#2a2112; border-radius:12px }
+    section { margin:1rem 0 2rem; padding:1.5rem; background:rgba(16,28,44,.94);
+      border:1px solid var(--line); border-radius:16px }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:1rem }
+    .card { padding:1rem; border:1px solid var(--line); border-radius:12px; background:#0c1725 }
+    .metric { font-size:2rem; font-weight:800; color:var(--cyan) }
+    .label { color:var(--muted); font-size:.9rem } .good { color:var(--green) }
+    .warn { color:var(--amber) } .bad { color:var(--red) }
+    table { width:100%; border-collapse:collapse; margin-top:1rem }
+    th,td { padding:.75rem; border-bottom:1px solid var(--line); text-align:left; vertical-align:top }
+    th { color:var(--muted); font-size:.8rem; text-transform:uppercase; letter-spacing:.08em }
+    ul,ol { padding-left:1.25rem } li { margin:.35rem 0 }
+    .tag { display:inline-block; padding:.16rem .52rem; border-radius:999px; font-size:.78rem;
+      font-weight:700; border:1px solid currentColor }
+    footer { color:var(--muted); padding:1rem 0 4rem; font-size:.9rem }
+    @media (max-width:700px) { section { padding:1rem; overflow-x:auto } th,td { min-width:150px } }
   </style>
 </head>
 <body>
-  <a class="skip" href="#main">Skip to report</a>
-  <header class="topbar">
-    <div class="topbar-inner">
-      <a class="brand" href="#top">CJ<span>/</span>TRIAGE</a>
-      <nav aria-label="Report navigation">
-        <a href="#verdict">Verdict</a>
-        <a href="#audit">Audit</a>
-        <a href="#gaps">Gaps</a>
-        <a href="#market">Market map</a>
-        <a href="#roadmap">Roadmap</a>
-        <a href="#cli">CLI contract</a>
-        <a href="#metrics">Metrics</a>
-        <a href="#sources">Sources</a>
-      </nav>
-    </div>
+  <header>
+    <div class="eyebrow">Evidence-based alpha closeout · 10 August 2026</div>
+    <h1>Useful, bounded, and honest.</h1>
+    <p class="lede">A final engineering assessment and roadmap for
+      <strong>DimpleNemade/Cryptojacking_Project</strong>. This document distinguishes
+      reproduced local evidence, remote release gates, and claims that still require
+      external validation.</p>
+    <div class="status"><strong>Closeout verdict:</strong> the codebase is now a credible
+      <em>alpha candidate</em> for offline artifact triage. It is not a validated
+      cryptojacking detector, memory-forensics suite, commercial product, or forensic
+      examination authority. Local engineering gates pass; GitHub CI, branch protection,
+      release provenance, independent review, and market validation remain separate facts.</div>
   </header>
 
-  <div class="hero" id="top">
-    <div class="hero-inner">
-      <div class="eyebrow">Evidence-based product and engineering roadmap</div>
-      <h1>Make it useful first.<br>Make every claim provable.</h1>
-      <p class="lede">A critical audit of <strong>DimpleNemade/Cryptojacking_Project</strong>, its local documentation, GitHub roadmap, implementation, and realistic position among forensic, signature-scanning, runtime, and cloud-security tools.</p>
-      <div class="verdict">
-        <strong>Professional verdict:</strong> the repository is a promising academic artifact-scanning prototype with honest limitations and a cleaner modular core than its initial version. It is not currently an installable CLI product, a memory-forensics tool, a validated cryptojacking detector, or a forensically defensible instrument. The next release should be a narrow alpha—not an “enterprise” platform.
+  <main>
+    <section id="evidence">
+      <h2>Reproduced evidence</h2>
+      <p>These figures come from the local 0.1.0a2 candidate on Windows 11 / CPython 3.12.4.</p>
+      <div class="grid">
+        <div class="card"><div class="metric">46</div><div class="label">tests passed</div></div>
+        <div class="card"><div class="metric">85.35%</div><div class="label">statement coverage; enforced 85% gate</div></div>
+        <div class="card"><div class="metric">0 / 10 / 20 / 30</div><div class="label">clean / findings / incomplete / integrity exits reproduced</div></div>
+        <div class="card"><div class="metric">2</div><div class="label">built artifacts: wheel and sdist</div></div>
       </div>
-      <div class="meta">
-        <span>Audit date: 9 August 2026</span>
-        <span>Canonical commit: <span class="mono">ecf7773</span></span>
-        <span>Remote: public / <span class="mono">main</span></span>
-        <span>15 open roadmap issues including epic</span>
-        <span>Primary-source research only</span>
-      </div>
-    </div>
-  </div>
-
-  <main id="main">
-    <section id="verdict">
-      <h2>What is true today</h2>
-      <p class="section-intro">This snapshot separates delivered behavior from plans and untracked work. It uses the tracked default branch as the implementation authority.</p>
-      <div class="grid grid-4">
-        <article class="card kpi"><span class="value">3</span><span class="label">YARA rules</span><p class="note">Small, broad indicator set; no published rule-quality dataset.</p></article>
-        <article class="card kpi"><span class="value">30</span><span class="label">Historical passing tests</span><p class="note">Recorded in July validation docs; not reproduced in this audit environment.</p></article>
-        <article class="card kpi"><span class="value">0</span><span class="label">Release packages</span><p class="note">No <code>pyproject.toml</code>, wheel, console script, license, or release provenance.</p></article>
-        <article class="card kpi"><span class="value">0</span><span class="label">Real-world validation claims supportable</span><p class="note">Only inert synthetic fixtures are documented.</p></article>
-      </div>
-      <div class="grid grid-2" style="margin-top:1rem">
-        <div class="card">
-          <h3>Implemented and worth keeping</h3>
-          <ul class="truth-list">
-            <li>Package-owned Python pipeline with thin compatibility launchers.</li>
-            <li>Safe subprocess invocation with <code>shell=False</code> and timeouts.</li>
-            <li>Pre/post SHA-256, unique run directories, structured JSON findings, and a manifest.</li>
-            <li>Explicit <code>SUCCESS</code>, <code>PARTIAL</code>, <code>FAILED</code>, and <code>INTEGRITY_FAILURE</code> report states.</li>
-            <li>README and limitations documents explicitly reject proof-of-compromise and court-ready claims.</li>
-          </ul>
-        </div>
-        <div class="card">
-          <h3>Not implemented on tracked <code>main</code></h3>
-          <ul class="truth-list">
-            <li>No installable <code>cj-triage</code> command or clean-machine package path.</li>
-            <li>No operating-system memory parsing, process attribution, acquisition, runtime monitoring, or enrichment.</li>
-            <li>No enforced evidence write-protection, CI, lint gate, coverage artifact, CodeQL, SBOM, or signed release.</li>
-            <li>No detection corpus, measured precision/recall, independent validation, or performance envelope.</li>
-            <li>No stable output schema, privacy-safe default, integration API, or documented automation exit contract.</li>
-          </ul>
-        </div>
-      </div>
-      <div class="callout amberbox" style="margin-top:1rem">
-        <strong>Roadmap integrity warning</strong>
-        An excluded local copy at <code>Cryptojacking_Project-main/</code> contains a separate <code>roadmap.md</code>, <code>agents.md</code>, and untracked code changes. That roadmap marks read-only enforcement and related controls complete even though those changes are neither on tracked <code>main</code> nor technically sufficient to prove write protection. Its legal-admissibility targets, certification plans, 95% coverage target, and zero-challenge metrics are unsupported and should not guide execution.
-      </div>
+      <ul>
+        <li class="good">Lint, pre-commit, real YARA rule compilation, tests, and schema validation pass.</li>
+        <li class="good">The wheel installs outside the source tree; packaged scan and bundle verification pass.</li>
+        <li class="good">Schema-valid report tampering is detected through manifest sibling hashes.</li>
+        <li class="good">Raw matched values and absolute paths are absent by default and require <code>--raw</code>.</li>
+        <li class="warn">The corpus is two inert text fixtures; no detection-performance percentage is supportable.</li>
+      </ul>
     </section>
 
-    <section id="audit">
-      <h2>Maturity scorecard</h2>
-      <p class="section-intro">Ratings describe observed evidence, not effort or potential. “Red” means a release-blocking gap; “amber” means a useful foundation that still lacks the evidence required for the claim.</p>
-      <div class="scorecard">
-        <table>
-          <thead><tr><th>Dimension</th><th>Status</th><th>Observed evidence</th><th>Release implication</th></tr></thead>
-          <tbody>
-            <tr><td>Scope honesty</td><td><span class="pill green"><span class="dot"></span>Strong</span></td><td>README and limitations clearly state triage-only boundaries.</td><td>Preserve this language; make product naming match it.</td></tr>
-            <tr><td>Core code structure</td><td><span class="pill amber"><span class="dot"></span>Prototype</span></td><td>Modular package, wrappers, findings, manifest, tests.</td><td>Good base; needs packaging, contracts, limits, and end-to-end tests.</td></tr>
-            <tr><td>CLI usability</td><td><span class="pill red"><span class="dot"></span>Blocked</span></td><td>Source-tree invocation only; three options; no <code>doctor</code>, schema mode, or stable exit semantics.</td><td>Cannot claim one-command installation or automation readiness.</td></tr>
-            <tr><td>Detection validity</td><td><span class="pill red"><span class="dot"></span>Unvalidated</span></td><td>Three broad rules and string candidates tested on inert fixtures only.</td><td>No defensible false-positive, false-negative, or coverage claim.</td></tr>
-            <tr><td>Memory forensics</td><td><span class="pill red"><span class="dot"></span>Absent</span></td><td>Whole-file YARA and GNU <code>strings</code>; no OS structure parsing.</td><td>Rename the input from “memory” or integrate a real framework.</td></tr>
-            <tr><td>Evidence integrity</td><td><span class="pill amber"><span class="dot"></span>Bounded</span></td><td>Pre/post hash detects interval changes; acquisition and write blocking are outside scope.</td><td>Useful control, but not chain of custody or forensic soundness.</td></tr>
-            <tr><td>Secure input handling</td><td><span class="pill red"><span class="dot"></span>Blocked</span></td><td>Unbounded captured output, PATH-resolved engines, live XMRig artifacts in Git.</td><td>Do not publish packages until sample and resource policies are fixed.</td></tr>
-            <tr><td>Reproducibility</td><td><span class="pill amber"><span class="dot"></span>Partial</span></td><td>Rule hashes and tool versions recorded; no engine path/hash on main, schema version, locked environment, or release provenance.</td><td>Reports cannot yet be reproduced with high confidence.</td></tr>
-            <tr><td>Quality and supply chain</td><td><span class="pill red"><span class="dot"></span>Absent</span></td><td>No CI workflows, build metadata, license, SBOM, security policy, or attestations.</td><td>Public alpha release gate fails.</td></tr>
-            <tr><td>Market evidence</td><td><span class="pill red"><span class="dot"></span>Unknown</span></td><td>No user research, pilots, adoption, workflow baseline, or willingness-to-use evidence.</td><td>Treat positioning as a hypothesis, not a product-market claim.</td></tr>
-          </tbody>
-        </table>
-      </div>
+    <section id="fixes">
+      <h2>Defects corrected during final audit</h2>
+      <table>
+        <thead><tr><th>Defect</th><th>Why it mattered</th><th>Resolution</th></tr></thead>
+        <tbody>
+          <tr><td>YARA timeout treated as milliseconds</td><td>The engine accepts whole seconds, so the recorded deadline could expand from 120 seconds to roughly 33 hours.</td><td>Use remaining seconds and round up to the engine's integer contract.</td></tr>
+          <tr><td>Whole-file Python read</td><td>A 200 MB accepted input was duplicated in memory before scanning.</td><td>YARA scans by filepath; strings are extracted in bounded chunks.</td></tr>
+          <tr><td>Manifest hashed itself</td><td>Writing the hash into the manifest changed the manifest, invalidating the stored hash immediately.</td><td>Manifest hashes immutable sibling outputs and is written last.</td></tr>
+          <tr><td>Verifier checked schema only</td><td>Documentation claimed output tamper detection that did not exist.</td><td>A manifest or run-directory verification now validates sibling hashes and returns exit 30 on mismatch.</td></tr>
+          <tr><td>Privacy leakage</td><td>Safe reports contained absolute output paths and raw matched values.</td><td>Paths and raw values are opt-in; hashes and basenames preserve review utility. Indicator hashes are pseudonyms, not anonymity.</td></tr>
+          <tr><td>CI allowed lint failure; smoke returned 10</td><td>The workflow could pass bad lint but fail a correct positive scan.</td><td>Lint is required and the smoke step explicitly expects exit 10.</td></tr>
+          <tr><td>Weak correlation test</td><td>It compared only sequential IDs, not finding content.</td><td>Content ordering/correlation is deterministic and asserted directly.</td></tr>
+        </tbody>
+      </table>
     </section>
 
-    <section id="gaps">
-      <h2>Priority gaps and why they matter</h2>
-      <p class="section-intro">These are the issues most likely to invalidate results, break automation, or make external users distrust the project.</p>
-      <div class="gap-list">
-        <details open>
-          <summary><span class="pill red">P0</span> Failed scans still produce a successful process exit</summary>
-          <div class="detail-body"><p>The CLI prints “Analysis complete” and returns <code>0</code> whenever report generation finishes, even if the report state is <code>FAILED</code>, <code>PARTIAL</code>, or <code>INTEGRITY_FAILURE</code>. CI and orchestration can therefore treat an unusable analysis as success.</p><p class="evidence">Evidence: <code>cryptojacking_forensics/cli.py:262</code>; report status is not propagated from <code>run_pipeline</code> to <code>main</code>.</p></div>
-        </details>
-        <details open>
-          <summary><span class="pill red">P0</span> The repository contains executable mining software and an archive</summary>
-          <div class="detail-body"><p>The tracked tree includes a roughly 7 MB XMRig executable and a roughly 3 MB archive. Windows security blocked the executable during this audit and the worktree now records it as deleted. Keeping active dual-use binaries in normal Git distribution creates endpoint-alert, contributor-safety, licensing, repository-size, and trust problems.</p><p class="evidence">Evidence: <code>Miner_Samples/xmrig-6.21.0/xmrig</code>, <code>Miner_Samples/xmrig-6.21.0-linux-static-x64.tar.gz.1</code>, and the tracked <code>SHA256SUMS</code>. Do not restore or execute the quarantined file.</p></div>
-        </details>
-        <details>
-          <summary><span class="pill red">P0</span> The default branch contains a Windows-invalid path named <code>...</code></summary>
-          <div class="detail-body"><p>The blob contains stray Volatility error output, not required project material. Its path prevents a normal Windows checkout and is already tracked by GitHub issue #12.</p><p class="evidence">Evidence: root tree entry <code>...</code>, 719 bytes; GitHub issue <a href="https://github.com/DimpleNemade/Cryptojacking_Project/issues/12">#12</a>.</p></div>
-        </details>
-        <details>
-          <summary><span class="pill red">P0</span> “Memory” input naming overstates the analysis</summary>
-          <div class="detail-body"><p>The program scans file bytes with YARA and GNU <code>strings</code>. It cannot list processes, map addresses, identify sockets, reconstruct execution, or distinguish active mining from a string in documentation. That is artifact scanning, not memory forensics.</p><p class="evidence">Evidence: <code>yara_scanner.py</code> and <code>strings_extractor.py</code>; the project documentation itself acknowledges no OS-aware parsing.</p></div>
-        </details>
-        <details>
-          <summary><span class="pill red">P0</span> Read-only claims need a narrower, truthful model</summary>
-          <div class="detail-body"><p>Opening one descriptor with <code>rb</code> proves only that one open was read-only. <code>os.access</code> is advisory, platform-dependent, and subject to permissions and time-of-check changes. External engines reopen the path themselves. Software checks cannot establish acquisition provenance, hardware write blocking, or chain of custody.</p><p class="evidence">Revise GitHub issue <a href="https://github.com/DimpleNemade/Cryptojacking_Project/issues/13">#13</a>: record observed controls and policy mode; do not label them proof.</p></div>
-        </details>
-        <details>
-          <summary><span class="pill amber">P1</span> Engine resolution and captured output are not bounded</summary>
-          <div class="detail-body"><p><code>yara</code> and <code>strings</code> are selected from <code>PATH</code>. Their full stdout/stderr are captured in memory and later written, so a large dump or high-match rule can exhaust memory or disk. The timeout is per subprocess, not a total run budget.</p><p class="evidence">Evidence: <code>commands.py:54</code>; three sequential YARA runs plus strings and version probes.</p></div>
-        </details>
-        <details>
-          <summary><span class="pill amber">P1</span> Rule quality is insufficient for severity claims</summary>
-          <div class="detail-body"><p>Rules match generic values such as <code>:3333</code>, <code>:4444</code>, <code>minerd</code>, <code>mining</code>, and <code>xmrig</code>. A single rule match can produce HIGH severity without calibrated likelihood or context. Current correlation depends on whichever match value is retained first.</p><p class="evidence">Evidence: <code>YARA_Rules/network_rules.yar</code>, <code>process_rules.yar</code>, <code>miner_rules.yar</code>, and hard-coded severities in <code>findings.py</code>.</p></div>
-        </details>
-        <details>
-          <summary><span class="pill amber">P1</span> Reports expose sensitive local and evidence-derived data</summary>
-          <div class="detail-body"><p>Absolute paths, commands, YARA values, wallet-shaped strings, and raw <code>strings</code> output are retained. The README warns users, but redaction is manual and output permissions are not hardened.</p><p class="evidence">Evidence: <code>README.md:140</code> and <code>cli.py:224</code>. Privacy-safe output must be the default, with explicit opt-in for raw data.</p></div>
-        </details>
-        <details>
-          <summary><span class="pill amber">P1</span> Historical test success is not a release gate</summary>
-          <div class="detail-body"><p>The July document records 30 passing tests on one Ubuntu environment. This audit could run CLI help but could not reproduce the suite: the root Python lacks pytest, and the excluded copy's virtual environment references a missing interpreter. Mocked subprocess tests also do not validate real engine behavior across supported hosts.</p><p class="evidence">Evidence: <code>docs/VALIDATION.md</code>; no CI files or package metadata on tracked main.</p></div>
-        </details>
-      </div>
+    <section id="position">
+      <h2>Market position: narrow value, modest differentiation</h2>
+      <p><strong>Direct commercial payoff is currently unlikely.</strong> Mature tools already
+        cover YARA scanning, OS-aware memory analysis, runtime detection, and cloud context.
+        The defensible value here is a small offline workflow that packages rules, bounded
+        extraction, reproducibility metadata, privacy defaults, explicit failure states, and
+        portable reports. That can be useful for teaching, lab triage, portfolio evidence,
+        or as a component inside a larger workflow. It is not yet a moat.</p>
+      <table>
+        <thead><tr><th>Reference tool</th><th>Established capability</th><th>Relationship to cj-triage</th></tr></thead>
+        <tbody>
+          <tr><td>YARA / yara-python</td><td>Rule compilation and file/data/process matching.</td><td>Core engine; cj-triage adds workflow controls and reports, not a new detector engine.</td></tr>
+          <tr><td>Volatility 3</td><td>OS-aware memory layers, symbols, objects, and plugins.</td><td>Complementary. cj-triage must not call generic file scanning “memory forensics.”</td></tr>
+          <tr><td>LOKI / THOR family</td><td>IOC and YARA-oriented host scanning with broader operational history.</td><td>Directly challenges differentiation; this alpha is smaller and offline-focused.</td></tr>
+          <tr><td>Falco / Tracee</td><td>Runtime syscall and workload detections.</td><td>Different problem: live behavior versus supplied-file triage.</td></tr>
+          <tr><td>Defender / GuardDuty</td><td>Endpoint or cloud telemetry, enrichment, response, and managed detections.</td><td>Not competitors an alpha CLI can replace.</td></tr>
+        </tbody>
+      </table>
+      <p><strong>Investment rule:</strong> keep only low-cost maintenance unless external users
+        repeatedly use the report handoff and can show saved analyst time. Do not fund a GUI,
+        SaaS platform, EDR agent, SIEM, or legal-reporting layer without demand evidence.</p>
     </section>
 
-    <section class="position" aria-labelledby="position-title">
-      <div class="eyebrow">Recommended vision</div>
-      <h2 id="position-title">An <em>offline evidence-aware triage orchestrator</em>, not a new EDR, SIEM, cloud detector, or memory framework.</h2>
-      <p class="section-intro">The credible wedge is a small CLI that accepts supplied artifacts or structured output from established engines, runs a versioned cryptojacking-focused rule pack, preserves reproducibility metadata, and emits explainable, privacy-aware findings. The value must come from workflow quality and validation evidence—not from pretending broad strings are proprietary detection.</p>
-    </section>
-
-    <section id="market">
-      <h2>Existing-tool and market map</h2>
-      <p class="section-intro">The category is crowded at every detection layer. This mapping is factual; the recommended position is an inference from the overlap. No market-size or revenue claim is made.</p>
-      <div class="scorecard landscape">
-        <table>
-          <thead><tr><th>Tool / category</th><th>What it already does</th><th>Where this project cannot compete now</th><th>Reasonable relationship</th></tr></thead>
-          <tbody>
-            <tr><td>YARA / YARA-X</td><td>General pattern engines with structured APIs, timeouts, match metadata, cross-platform support; YARA-X also exposes Python APIs and JSON/YAML-oriented CLI capabilities.</td><td>Core scanning performance, parser safety, rule language, ecosystem.</td><td class="ours"><span class="fit">Embed or orchestrate</span><br><small>Own the cryptojacking workflow, schemas, and validated rule pack—not the engine.</small></td></tr>
-            <tr><td>Volatility 3</td><td>Real memory-forensics framework with Windows, Linux, and macOS plugins, process/network views, scanners, library use, and structured renderers.</td><td>OS-aware memory interpretation and plugin ecosystem.</td><td class="ours"><span class="fit">Consume structured output</span><br><small>Add a tested adapter before calling this project memory-aware.</small></td></tr>
-            <tr><td>LOKI / THOR family</td><td>IOC and YARA scanning, hashes, file paths, process memory, connections, updates, and analyst-facing scoring. Python LOKI is now deprecated/inactive in favor of newer tools.</td><td>General-purpose IOC scan breadth and long-established rule ecosystem.</td><td class="ours"><span class="fit">Differentiate on reproducibility</span><br><small>Cryptojacking focus, open schemas, evidence metadata, and independent validation.</small></td></tr>
-            <tr><td>Falco / Tracee</td><td>Runtime host/container telemetry from syscalls and other events. Falco ships cryptominer/Stratum rules and explicitly documents bypass/noise trade-offs.</td><td>Real-time process, network, host, container, and Kubernetes detection.</td><td class="ours"><span class="no-fit">Do not rebuild</span><br><small>Optionally ingest exported alerts for offline case correlation later.</small></td></tr>
-            <tr><td>AWS GuardDuty / Microsoft Defender for Cloud</td><td>Managed cloud detections using DNS, runtime, process, threat-intelligence, anomaly, and multi-signal context.</td><td>Cloud telemetry, managed enrichment, fleet scale, operational response.</td><td class="ours"><span class="no-fit">Not a direct competitor</span><br><small>Useful comparison showing why static strings alone cannot support high-confidence cloud claims.</small></td></tr>
-          </tbody>
-        </table>
-      </div>
-      <div class="grid grid-3" style="margin-top:1rem">
-        <article class="card"><h3>Target user hypothesis</h3><p>DFIR learners, small incident-response teams, and lab analysts who need a transparent offline first pass over supplied artifacts where a full EDR or cloud service is unavailable.</p><span class="pill blue">Hypothesis — validate</span></article>
-        <article class="card"><h3>Job to be done</h3><p>Produce a reproducible shortlist of cryptojacking leads, with engine/rule provenance and clear limitations, that can be handed to deeper analysis without hiding partial failures.</p><span class="pill cyan">Narrow and testable</span></article>
-        <article class="card"><h3>Current moat</h3><p>None demonstrated. A defensible advantage could emerge from a high-quality labeled corpus, independently tested rules, stable schemas, adapters, and trustworthy release provenance.</p><span class="pill red">No moat yet</span></article>
-      </div>
+    <section id="gates">
+      <h2>Closeout gates</h2>
+      <table>
+        <thead><tr><th>Gate</th><th>Status</th><th>Evidence or blocker</th></tr></thead>
+        <tbody>
+          <tr><td>Installable alpha implementation</td><td><span class="tag good">PASS LOCAL</span></td><td>Clean wheel install, packaged commands, synthetic scan, and bundle verification reproduced.</td></tr>
+          <tr><td>Quality contract</td><td><span class="tag good">PASS LOCAL</span></td><td>46 tests, 85.35% coverage, strict schemas, lint, formatting, typing, and pre-commit.</td></tr>
+          <tr><td>Safe repository distribution</td><td><span class="tag good">PASS TREE</span></td><td>No tracked miner executable/archive in candidate distribution; excluded copy remains out of scope.</td></tr>
+          <tr><td>Exact-revision CI</td><td><span class="tag warn">REMOTE GATE</span></td><td>Must be observed green after the candidate commit is pushed.</td></tr>
+          <tr><td>Branch protection / issue #19</td><td><span class="tag bad">OPEN</span></td><td>Requires repository administration and a test PR proving direct pushes and failed checks are blocked.</td></tr>
+          <tr><td>Attested GitHub prerelease</td><td><span class="tag warn">NOT YET RUN</span></td><td>Release workflow exists; generated SBOM, checksums, and attestation must be inspected.</td></tr>
+          <tr><td>Detection validity</td><td><span class="tag bad">NOT ESTABLISHED</span></td><td>No representative corpus, held-out set, denominators, or independent tester.</td></tr>
+          <tr><td>Market validity</td><td><span class="tag bad">NOT ESTABLISHED</span></td><td>No documented external operators, repeat use, baseline comparison, or willingness to pay.</td></tr>
+        </tbody>
+      </table>
     </section>
 
     <section id="roadmap">
-      <h2>Sequenced roadmap with exit gates</h2>
-      <p class="section-intro">Dates are effort windows after work starts, not calendar promises. Do not begin the next phase until the current exit gate has objective evidence.</p>
-      <div class="timeline">
-        <article class="phase">
-          <div class="phase-marker">0</div>
-          <div class="phase-card">
-            <div class="phase-top"><h3>Repository safety and product truth</h3><span class="pill red">Release blocker</span><span class="phase-meta">1–2 weeks</span></div>
-            <div class="phase-grid">
-                <div><strong>Outcomes</strong><ul><li>Delete the invalid <code>...</code> path; verify clean Windows and Linux clones.</li><li>Remove active XMRig executable/archive from the normal tree; decide whether history remediation is required after impact review.</li><li>Add license, <code>SECURITY.md</code>, safe-sample policy, threat model, and supported-use statement.</li><li>Replace “memory” naming with neutral <code>input</code>/<code>artifact</code> until a real memory adapter exists.</li><li>Make the tracked GitHub epic and <code>docs/project-roadmap.html</code> the roadmap authorities; archive the excluded-copy roadmap.</li></ul><p class="fineprint"><strong>Existing issues:</strong> <a href="https://github.com/DimpleNemade/Cryptojacking_Project/issues/12">#12</a>, <a href="https://github.com/DimpleNemade/Cryptojacking_Project/issues/18">#18</a>. Add issues for sample governance, threat model, and product scope.</p></div>
-              <div class="gate"><h4>Exit gate</h4><ul><li>Fresh standard clone succeeds on Windows and Ubuntu.</li><li>No executable malware/miner in the default source distribution.</li><li>Public claims match tracked behavior.</li><li>Security reporting and licensing are visible.</li></ul></div>
-            </div>
-          </div>
-        </article>
-
-        <article class="phase">
-          <div class="phase-marker">1</div>
-          <div class="phase-card">
-            <div class="phase-top"><h3>Installable, automatable alpha CLI</h3><span class="pill amber">Foundation</span><span class="phase-meta">2–4 weeks</span></div>
-            <div class="phase-grid">
-              <div><strong>Outcomes</strong><ul><li>Create standards-based packaging and one <code>cj-triage</code> console script.</li><li>Define <code>scan</code>, <code>doctor</code>, <code>rules check</code>, and <code>version</code> commands.</li><li>Publish stable exit codes; propagate failed, partial, integrity, and findings states.</li><li>Version JSON Schema; separate human output from machine output and stdout from stderr.</li><li>Set total time, input size, output size, match count, and raw-string limits.</li><li>Choose and validate an in-process engine: compare <code>yara-python</code> and YARA-X for rule parity, wheels, licensing, timeout behavior, and supported platforms.</li><li>Add atomic writes, privacy-safe defaults, package/rule/schema versions, and tool provenance.</li></ul><p class="fineprint"><strong>Existing issues:</strong> <a href="https://github.com/DimpleNemade/Cryptojacking_Project/issues/11">#11</a>, <a href="https://github.com/DimpleNemade/Cryptojacking_Project/issues/14">#14</a>, <a href="https://github.com/DimpleNemade/Cryptojacking_Project/issues/15">#15</a>, <a href="https://github.com/DimpleNemade/Cryptojacking_Project/issues/20">#20</a>, <a href="https://github.com/DimpleNemade/Cryptojacking_Project/issues/21">#21</a>.</p></div>
-              <div class="gate"><h4>Exit gate</h4><ul><li>Wheel installs into clean supported environments.</li><li><code>cj-triage --help</code> and fixture scan work outside source tree.</li><li>Every terminal state has a tested exit code.</li><li>Large/malformed inputs remain within declared limits.</li><li>Windows and Ubuntu end-to-end CI passes with the real engine.</li></ul></div>
-            </div>
-          </div>
-        </article>
-
-        <article class="phase">
-          <div class="phase-marker">2</div>
-          <div class="phase-card">
-            <div class="phase-top"><h3>Forensic workflow controls without legal overclaim</h3><span class="pill amber">Evidence quality</span><span class="phase-meta">3–5 weeks</span></div>
-            <div class="phase-grid">
-              <div><strong>Outcomes</strong><ul><li>Define strict and standard evidence policies; record observed file identity, metadata, access mode, hashes, and control limitations.</li><li>Ensure all analysis engines consume only the resolved target; detect replacements and changes without claiming write-blocker equivalence.</li><li>Create deterministic report bundles with schema validation, canonical timestamps, environment metadata, and redaction modes.</li><li>Build known-answer, negative, boundary, error, timeout, concurrent-change, and large-input tests.</li><li>Commission competent review by someone other than the developer; publish method, test data description, results, and limitations.</li></ul><p class="fineprint"><strong>Existing issues:</strong> revise <a href="https://github.com/DimpleNemade/Cryptojacking_Project/issues/13">#13</a>; support with <a href="https://github.com/DimpleNemade/Cryptojacking_Project/issues/8">#8</a>, <a href="https://github.com/DimpleNemade/Cryptojacking_Project/issues/16">#16</a>, and <a href="https://github.com/DimpleNemade/Cryptojacking_Project/issues/17">#17</a>.</p></div>
-              <div class="gate"><h4>Exit gate</h4><ul><li>No control field is constant or stronger than observed evidence.</li><li>Independent tester reproduces known-answer results.</li><li>Partial/error results cannot be mistaken for clean.</li><li>Report bundle validates against its published schema.</li><li>Documentation explicitly says chain of custody remains an operational process.</li></ul></div>
-            </div>
-          </div>
-        </article>
-
-        <article class="phase">
-          <div class="phase-marker">3</div>
-          <div class="phase-card">
-            <div class="phase-top"><h3>Detection quality and memory-aware adapters</h3><span class="pill blue">Differentiation</span><span class="phase-meta">6–10 weeks</span></div>
-            <div class="phase-grid">
-              <div><strong>Outcomes</strong><ul><li>Define a versioned rule-pack format with IDs, ownership, references, ATT&amp;CK mapping, input type, confidence rationale, and false-positive notes.</li><li>Build a legally shareable labeled corpus with benign hard negatives, known positives, evasive variants, and a held-out evaluation split.</li><li>Replace arbitrary “risk severity” with evidence strength and analytic confidence until calibration exists.</li><li>Add a Volatility 3 JSON/JSONL adapter for process, network, command-line, and memory-region context; do not reimplement memory parsing.</li><li>Export first-class versioned JSON. Add SARIF for CI if users need it; use STIX 2.1 only for validated cyber-observable/indicator exchange, not every finding.</li><li>Test rules for correctness, performance, and cross-engine differences on every revision.</li></ul></div>
-              <div class="gate"><h4>Exit gate</h4><ul><li>Every rule has positive, negative, and boundary tests.</li><li>Evaluation reports denominators and corpus version.</li><li>Volatility-derived findings cite process/network source context.</li><li>No target metric is presented as achieved without a published result.</li><li>Rule-pack rollback and compatibility are tested.</li></ul></div>
-            </div>
-          </div>
-        </article>
-
-        <article class="phase">
-          <div class="phase-marker">4</div>
-          <div class="phase-card">
-            <div class="phase-top"><h3>Trustworthy release and market validation</h3><span class="pill green">Pilot</span><span class="phase-meta">4–8 weeks</span></div>
-            <div class="phase-grid">
-              <div><strong>Outcomes</strong><ul><li>Add least-privilege CI, CodeQL, dependency review, SBOM, pinned build actions, reproducible build records, and GitHub artifact attestations.</li><li>Publish signed/attested wheels with immutable release notes and an operator quickstart.</li><li>Conduct at least eight structured discovery interviews across the target roles before expanding scope.</li><li>Run three consented alpha pilots using sanitized or controlled data; compare task time and decision quality with each user's baseline workflow.</li><li>Choose continue/pivot/stop based on observed repeated use and willingness to adopt—not compliments or download counts.</li></ul><p class="fineprint"><strong>Existing issues:</strong> <a href="https://github.com/DimpleNemade/Cryptojacking_Project/issues/9">#9</a>, <a href="https://github.com/DimpleNemade/Cryptojacking_Project/issues/10">#10</a>, <a href="https://github.com/DimpleNemade/Cryptojacking_Project/issues/19">#19</a>.</p></div>
-              <div class="gate"><h4>Exit gate</h4><ul><li>Release provenance and SBOM verify independently.</li><li>At least two external users complete the workflow without developer intervention.</li><li>Pilot evidence identifies a repeated problem and measurable improvement.</li><li>Unresolved safety or validity blockers are published, not hidden.</li></ul></div>
-            </div>
-          </div>
-        </article>
+      <h2>Roadmap after code freeze</h2>
+      <div class="grid">
+        <div class="card"><h3>1. Release evidence</h3><ol><li>Push through a pull request.</li><li>Require CI, CodeQL, pre-commit, and dependency review.</li><li>Enable and test branch protection.</li><li>Create the 0.1.0a2 prerelease only after all checks are green.</li></ol></div>
+        <div class="card"><h3>2. Independent validity</h3><ol><li>Have a competent person other than the developer repeat the test plan.</li><li>Version a lawful corpus with benign hard negatives and evasive variants.</li><li>Report denominators and limitations; never convert targets into results.</li></ol></div>
+        <div class="card"><h3>3. Demand decision</h3><ol><li>Observe at least five target analysts using the workflow.</li><li>Compare time-to-reviewed-lead with their existing process.</li><li>Continue only if repeat use or adoption is demonstrated.</li></ol></div>
       </div>
-    </section>
-
-    <section id="cli">
-      <h2>Target CLI contract</h2>
-      <p class="section-intro">A proper CLI is more than an entry point. It is a stable automation contract with safe defaults, inspectable dependencies, bounded execution, and unambiguous terminal states.</p>
-      <div class="command" aria-label="Proposed CLI examples">
-        <div><span class="prompt">$</span> cj-triage doctor --format json</div>
-        <div><span class="prompt">$</span> cj-triage rules check --rules ./rules --engine yara-x</div>
-        <div><span class="prompt">$</span> cj-triage scan artifact ./capture.bin --case CASE-001 --output ./case-output</div>
-        <div><span class="prompt">$</span> cj-triage scan volatility ./volatility.jsonl --case CASE-001 --format jsonl</div>
-        <div><span class="prompt">$</span> cj-triage verify ./case-output/manifest.json</div>
-      </div>
-      <div class="grid grid-3 contract" style="margin-top:1rem">
-        <article class="card"><h3>Stable terminal states</h3><p><code>0</code> complete/no findings; <code>10</code> complete/findings; <code>20</code> partial; <code>30</code> integrity failure; <code>64</code> usage/configuration; <code>70</code> internal failure. Final values must be documented and tested.</p></article>
-        <article class="card"><h3>Output discipline</h3><p>Machine data on stdout only when requested; progress and diagnostics on stderr. JSON/JSONL validated by schema. Raw strings and absolute paths off by default.</p></article>
-        <article class="card"><h3>Resource discipline</h3><p>Explicit total deadline, per-stage deadline, byte limits, match limits, output caps, safe temporary files, atomic finalization, and partial-result markers.</p></article>
-        <article class="card"><h3>Dependency transparency</h3><p><code>doctor</code> reports package, engine, rule-pack, schema, platform, and optional adapter versions without scanning evidence.</p></article>
-        <article class="card"><h3>Reproducibility</h3><p>Manifest records input identity, configuration, engine and rule hashes, limits, timestamps, statuses, warnings, and hashes of finalized outputs.</p></article>
-        <article class="card"><h3>Compatibility</h3><p>Semantic versioning for the CLI and schema; deprecation window for flags; adapters isolated behind typed interfaces; migration notes for breaking changes.</p></article>
-      </div>
-    </section>
-
-    <section id="metrics">
-      <h2>Metrics that can be defended</h2>
-      <p class="section-intro">Measure defined outcomes with denominators and versioned evidence. Do not use aspirational percentages as facts.</p>
-      <div class="grid grid-3">
-        <article class="card metric"><h3>Reliability</h3><p>Clean-install success by supported OS/Python matrix; end-to-end completion rate by fixture class; deterministic-output rate; bounded-time compliance.</p><p class="formula">Evidence: CI runs + published environment matrix.</p></article>
-        <article class="card metric"><h3>Detection quality</h3><p>Precision, recall, and error categories on a frozen labeled corpus and a held-out set; per-rule false-positive counts on hard negatives.</p><p class="formula">Evidence: corpus version, labels, confusion matrix, reviewer notes.</p></article>
-        <article class="card metric"><h3>Forensic workflow quality</h3><p>Hash/control completeness, schema-valid report rate, reproducibility by an independent tester, and documented deviations.</p><p class="formula">Evidence: known-answer reports and independent test record.</p></article>
-        <article class="card metric"><h3>Operator value</h3><p>Median time to a validated lead versus the user's existing workflow; analyst corrections per run; handoff completeness.</p><p class="formula">Evidence: timed pilot tasks, not self-reported satisfaction alone.</p></article>
-        <article class="card metric"><h3>Adoption signal</h3><p>External users who repeat the workflow on a second case without developer help; retained pilots; integration requests tied to real work.</p><p class="formula">Evidence: consented pilot records and follow-up use.</p></article>
-        <article class="card metric"><h3>Supply-chain trust</h3><p>Percent of releases with verified provenance and SBOM; dependency-alert disposition time; reproducible verification success.</p><p class="formula">Evidence: release attestations and security workflow logs.</p></article>
-      </div>
-      <div class="card do-not" style="margin-top:1rem">
-        <h3>Do not build yet</h3>
-        <p>Hosted dashboards, RBAC, a REST platform, automated legal reports, compliance certification, an anonymous threat-sharing consortium, proprietary anomaly scoring, monthly “coverage” promises, or operator certification. None solves the current alpha blockers, and none has validated demand. Revisit only after a reliable CLI is repeatedly used by external analysts.</p>
-      </div>
+      <p class="warn"><strong>Recommended stopping point:</strong> archive this repository after
+        the remote release gates if no maintainer will run the independent-validation and user
+        discovery work. The alpha remains a credible portfolio artifact without pretending to be
+        a business.</p>
     </section>
 
     <section id="sources">
-      <h2>Research basis</h2>
-      <p class="section-intro">Primary and authoritative sources accessed for this audit. Product-positioning conclusions are explicitly inferences from repository evidence and this tool landscape.</p>
-      <ol class="source-list">
-        <li><a href="https://github.com/DimpleNemade/Cryptojacking_Project">Project repository</a> — tracked code, history, and public roadmap issues.</li>
-        <li><a href="https://attack.mitre.org/techniques/T1496/">MITRE ATT&amp;CK T1496 Resource Hijacking</a> — current behavioral detection strategy.</li>
-        <li><a href="https://attack.mitre.org/techniques/T1496/001/">MITRE ATT&amp;CK T1496.001 Compute Hijacking</a> — multi-signal compute-hijacking analytics.</li>
-        <li><a href="https://csrc.nist.gov/pubs/sp/800/86/final">NIST SP 800-86</a> — forensic integration into incident response and explicit non-legal-advice scope.</li>
-        <li><a href="https://www.nist.gov/itl/csd/secure-systems-and-applications/computer-forensics-tool-testing-program-cftt">NIST CFTT</a> — repeatable tool specifications, procedures, criteria, and test sets.</li>
-        <li><a href="https://www.swgde.org/documents/published-complete-listing/18-q-001-minimum-requirements-for-testing-tools-used-in-digital-and-multimedia-forensics/">SWGDE minimum tool-testing requirements</a> — independent/competent testing guidance for in-house tools.</li>
-        <li><a href="https://packaging.python.org/en/latest/guides/creating-command-line-tools/">Python Packaging User Guide: CLI tools</a> — <code>pyproject.toml</code>, console scripts, and pipx workflow.</li>
-        <li><a href="https://yara.readthedocs.io/en/latest/yarapython.html">YARA Python API</a> — compilation, structured matches, warnings, and scan timeouts.</li>
-        <li><a href="https://virustotal.github.io/yara-x/docs/api/python/">YARA-X Python API</a> — cross-platform package, structured results, file scan, match caps, and timeouts.</li>
-        <li><a href="https://virustotal.github.io/yara-x/docs/intro/yara-x-vs-yara/">YARA-X versus YARA</a> — performance and usability benefits plus API incompatibility and missing process scan.</li>
-        <li><a href="https://volatility3.readthedocs.io/en/latest/">Volatility 3 documentation</a> — OS-aware memory plugins, library use, scanners, and structured renderers.</li>
-        <li><a href="https://github.com/Neo23x0/Loki">LOKI official repository</a> — IOC/YARA scope and current inactive/deprecated status of the Python implementation.</li>
-        <li><a href="https://falco.org/docs/reference/rules/default-rules/">Falco default rules</a> — cryptominer and Stratum runtime detections with documented noise/bypass warnings.</li>
-        <li><a href="https://aquasecurity.github.io/tracee/v0.22/docs/events/builtin/signatures/">Tracee security events</a> — runtime signatures over syscall, network, and LSM events.</li>
-        <li><a href="https://docs.aws.amazon.com/guardduty/latest/ug/findings-runtime-monitoring.html">AWS GuardDuty runtime findings</a> — runtime cryptominer, DNS, process, and cloud context.</li>
-        <li><a href="https://learn.microsoft.com/en-us/unified-secops/detect-threats-overview">Microsoft Defender threat detection</a> — continuously monitored server/cloud detections including cryptomining.</li>
-        <li><a href="https://www.oasis-open.org/standard/stix2-1/">OASIS STIX 2.1</a> — standardized cyber threat and observable information exchange.</li>
-        <li><a href="https://spdx.dev/use/specifications/">SPDX specifications</a> — ISO/IEC 5962:2021 SBOM standard and current specification.</li>
-        <li><a href="https://slsa.dev/spec/v1.2/build-track-basics">SLSA Build Track</a> — provenance and hosted/hardened build levels.</li>
-        <li><a href="https://docs.github.com/en/actions/concepts/security/artifact-attestations">GitHub artifact attestations</a> — signed provenance, SBOM attestations, and verification limitations.</li>
+      <h2>Primary sources</h2>
+      <p>Accessed 2026-08-10. Repository facts are tied to code, tests, generated artifacts,
+        and GitHub issue state; external capability statements use first-party documentation.</p>
+      <ol>
+        <li><a href="https://yara.readthedocs.io/en/latest/yarapython.html">YARA Python API</a> — file/data scanning, match objects, and timeout in seconds.</li>
+        <li><a href="https://volatility3.readthedocs.io/en/latest/">Volatility 3 documentation</a> — memory layers, objects, symbols, plugins, and renderers.</li>
+        <li><a href="https://www.swgde.org/wp-content/uploads/2024/04/2024-03-07-SWGDE-Minimum-Requirements-for-Testing-Tools-Used-in-Digital-and-Multimedia-Forensics-18-Q-001-2.1.pdf">SWGDE minimum tool-testing requirements</a> — baseline testing before casework and documentation of limitations.</li>
+        <li><a href="https://falco.org/docs/reference/rules/default-rules/">Falco default rules</a> — runtime detection scope.</li>
+        <li><a href="https://aquasecurity.github.io/tracee/latest/docs/events/builtin/signatures/">Tracee signatures</a> — runtime event/signature scope.</li>
+        <li><a href="https://docs.github.com/en/actions/concepts/security/artifact-attestations">GitHub artifact attestations</a> — provenance and verification boundaries.</li>
+        <li><a href="https://github.com/Neo23x0/Loki">LOKI repository</a> — open-source IOC/YARA scanner context.</li>
       </ol>
-      <div class="callout greenbox">
-        <strong>Method note</strong>
-        Repository facts were checked against local tracked files and the GitHub connector. Current-tool facts were researched from official specifications, project documentation, and vendor documentation. No third-party market-size report, promotional comparison site, or unsupported legal opinion was used.
-      </div>
     </section>
   </main>
-
-  <footer>
-    <div class="footer-inner">
-      <span>Cryptojacking Triage · Evidence-Based Roadmap · 9 August 2026</span>
-      <span>Verdict first · claims bounded · gates measurable</span>
-    </div>
-  </footer>
+  <footer>cj-triage 0.1.0a2 · Alpha evidence roadmap · Claims bounded by reproduced evidence</footer>
 </body>
 </html>

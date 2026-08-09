@@ -14,4 +14,3 @@ def sha256_file(path: Path, chunk_size: int = 1024 * 1024) -> str:
 
 def verify_hashes(before: str, after: str) -> str:
     return "PASS" if before and before == after else "FAIL"
-

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import FrozenInstanceError
 from pathlib import Path
 
 import pytest
@@ -9,12 +10,12 @@ import pytest
 from cryptojacking_forensics import cli
 from cryptojacking_forensics.case import (
     CaseRun,
-    TriageRunCollision,
     create_case_run,
     ensure_contained,
     new_run_id,
     validate_case_id,
 )
+from cryptojacking_forensics.errors import InvalidCaseID, UnsafeOutputPath
 
 
 def test_validate_case_id_accepts_valid():
@@ -24,7 +25,7 @@ def test_validate_case_id_accepts_valid():
 
 def test_validate_case_id_rejects_bad():
     for bad in [".", "..", "", "has space", "UPPER?", "../x", "a" * 65, "x/y"]:
-        with pytest.raises(Exception):
+        with pytest.raises(InvalidCaseID):
             validate_case_id(bad)
 
 
@@ -35,7 +36,7 @@ def test_ensure_contained_allows_inside():
 
 def test_ensure_contained_blocks_escape():
     root = Path("/tmp/reports")
-    with pytest.raises(Exception):
+    with pytest.raises(UnsafeOutputPath):
         ensure_contained(root, Path("/tmp/elsewhere/x"))
 
 
@@ -53,7 +54,7 @@ def test_new_run_id_unique():
 
 def test_case_run_frozen():
     cr = CaseRun("C", "R", Path("/tmp/x"), Path("/tmp/x/C/R"))
-    with pytest.raises(Exception):
+    with pytest.raises(FrozenInstanceError):
         cr.case_id = "other"  # type: ignore[misc]
 
 
