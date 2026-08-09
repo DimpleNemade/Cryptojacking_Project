@@ -30,8 +30,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8,<9", "coverage>=7,<9", "jsonschema>=4,<5"]
-test = ["pytest>=8,<9", "coverage>=7,<9", "jsonschema>=4,<5"]
+dev = ["pytest>=8,<10", "coverage>=7,<9", "jsonschema>=4,<5"]
+test = ["pytest>=8,<10", "coverage>=7,<9", "jsonschema>=4,<5"]
 
 [project.urls]
 Homepage = "https://github.com/DimpleNemade/Cryptojacking_Project"
